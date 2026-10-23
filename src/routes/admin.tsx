@@ -1732,6 +1732,7 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             />
             <TextField
               label="Phone"
+              type="tel"
               value={form.phone}
               onChange={(value) => setForm({ ...form, phone: value })}
             />

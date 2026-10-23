@@ -2,6 +2,7 @@ import { ArrowRight, LockKeyhole, UserPlus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { directReferralPlans } from "@/data/site";
 import { loginDistributor, registerDistributor } from "@/lib/distributor-api";
+import { isValidMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
@@ -35,6 +36,11 @@ function DistributorAuth() {
     setLoading(true);
     try {
       if (mode === "register") {
+        if (!isValidMobileNumber(phone)) {
+          setError(MOBILE_NUMBER_ERROR);
+          setLoading(false);
+          return;
+        }
         const distributor = await registerDistributor({
           name,
           username,
@@ -150,6 +156,9 @@ function DistributorAuth() {
                   <input
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={16}
                     className="field"
                     placeholder="Mobile number"
                     minLength={10}

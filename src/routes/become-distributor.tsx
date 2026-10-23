@@ -5,6 +5,7 @@ import distributorBreadcrumbImage from "@/assets/distributor-breadcrumb.png";
 import { LocationMap } from "@/components/shared/LocationMap";
 import { bonuses, directReferralPlans } from "@/data/site";
 import { submitPublicEnquiry } from "@/lib/public-api";
+import { isValidMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 
 const money = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -240,8 +241,11 @@ function BecomeDistributor() {
                 <input
                   {...register("phone", {
                     required: "Mobile number is required",
-                    pattern: { value: /^[0-9+\s-]{10,15}$/, message: "Enter a valid number" },
+                    validate: (value) => isValidMobileNumber(value) || MOBILE_NUMBER_ERROR,
                   })}
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={16}
                   className="field"
                   placeholder="+91 …"
                 />

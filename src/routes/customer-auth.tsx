@@ -1,6 +1,7 @@
 import { ArrowRight, LockKeyhole, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { loginCustomer, registerCustomer } from "@/lib/customer-api";
+import { isOptionalMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 
 function CustomerAuth() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -22,6 +23,11 @@ function CustomerAuth() {
     setLoading(true);
     try {
       if (mode === "register") {
+        if (!isOptionalMobileNumber(phone)) {
+          setError(MOBILE_NUMBER_ERROR);
+          setLoading(false);
+          return;
+        }
         await registerCustomer({ name, email, phone, password });
       } else {
         await loginCustomer(email, password);
@@ -109,6 +115,9 @@ function CustomerAuth() {
               <input
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
+                type="tel"
+                inputMode="numeric"
+                maxLength={16}
                 className="field"
                 placeholder="Mobile number (optional)"
               />

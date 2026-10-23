@@ -5,6 +5,7 @@ import { Stagger, StaggerItem } from "@/components/motion/Reveal";
 import { events as fallbackEvents } from "@/data/site";
 import { getPublicEvents, type PublicEvent } from "@/lib/cms";
 import { submitPublicEnquiry } from "@/lib/public-api";
+import { isValidMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 
 const title = "Events — Seminars, Business Meets & Product Launches | RDG";
 const description =
@@ -72,6 +73,10 @@ function Events() {
   async function submitRegistration(event: FormEvent) {
     event.preventDefault();
     if (!selectedEvent) return;
+    if (!isValidMobileNumber(form.phone)) {
+      setError(MOBILE_NUMBER_ERROR);
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -223,6 +228,9 @@ function Events() {
                   <input
                     value={form.phone}
                     onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={16}
                     className="field mt-1.5"
                     required
                   />

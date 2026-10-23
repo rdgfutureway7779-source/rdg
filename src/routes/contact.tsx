@@ -5,6 +5,7 @@ import contactBreadcrumbImage from "@/assets/contact.png";
 import { LocationMap } from "@/components/shared/LocationMap";
 import { company } from "@/data/site";
 import { submitPublicEnquiry } from "@/lib/public-api";
+import { isValidMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 
 const title = "Contact RDG Future Way — Head Office, Branches & Support";
 const description =
@@ -103,11 +104,18 @@ function Contact() {
                 aria-label="Email"
               />
               <input
-                {...register("phone", { required: true })}
+                {...register("phone", {
+                  required: "Mobile number is required",
+                  validate: (value) => isValidMobileNumber(value) || MOBILE_NUMBER_ERROR,
+                })}
+                type="tel"
+                inputMode="numeric"
+                maxLength={16}
                 className="field"
                 placeholder="Mobile number"
                 aria-label="Mobile number"
               />
+              {errors.phone && <span className="text-xs text-destructive">{errors.phone.message}</span>}
               <textarea
                 {...register("message", { required: true })}
                 rows={5}

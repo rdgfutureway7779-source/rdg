@@ -7,6 +7,7 @@ import {
   type Customer,
   type CustomerCartItem,
 } from "@/lib/customer-api";
+import { isValidMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
@@ -66,6 +67,10 @@ function Checkout() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
+    if (!isValidMobileNumber(form.shippingPhone)) {
+      setError(MOBILE_NUMBER_ERROR);
+      return;
+    }
     setSubmitting(true);
     try {
       const order = await createCustomerOrder({ ...form, paymentMethod: "cash_on_delivery" });
@@ -306,6 +311,9 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="field"
+                type={label === "Mobile number" ? "tel" : "text"}
+                inputMode={label === "Mobile number" ? "numeric" : undefined}
+                maxLength={label === "Mobile number" ? 16 : undefined}
         required={required}
       />
     </label>

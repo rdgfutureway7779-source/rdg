@@ -221,6 +221,22 @@ function getIdLevelProgress(value) {
 
 const idSchema = z.coerce.number().int().positive();
 const distributorMembershipAmount = 599;
+const mobileNumberPattern = /^(?:\+91|91)?[6-9]\d{9}$/;
+const isValidMobileNumber = (value) =>
+  mobileNumberPattern.test(String(value || "").replace(/[\s()-]/g, ""));
+const optionalMobileSchema = z
+  .string()
+  .trim()
+  .max(40)
+  .optional()
+  .nullable()
+  .refine((value) => !value || isValidMobileNumber(value), "Enter a valid mobile number.");
+const requiredMobileSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(40)
+  .refine(isValidMobileNumber, "Enter a valid mobile number.");
 const distributorPackagePlans = [
   { packageCount: 1, packageValue: 3500 },
   { packageCount: 2, packageValue: 7000 },
@@ -230,7 +246,7 @@ const distributorPackagePlans = [
 const customerRegisterSchema = z.object({
   name: z.string().trim().min(2).max(160),
   email: z.string().email().max(190),
-  phone: z.string().trim().max(40).optional().nullable(),
+  phone: optionalMobileSchema,
   password: z.string().min(8).max(120),
 });
 const customerLoginSchema = z.object({
@@ -239,7 +255,7 @@ const customerLoginSchema = z.object({
 });
 const customerOrderSchema = z.object({
   shippingName: z.string().trim().min(2).max(160),
-  shippingPhone: z.string().trim().min(7).max(40),
+  shippingPhone: requiredMobileSchema,
   shippingAddressLine1: z.string().trim().min(5).max(255),
   shippingAddressLine2: z.string().trim().max(255).optional().nullable(),
   shippingCity: z.string().trim().min(2).max(120),
@@ -258,7 +274,7 @@ const distributorRegisterSchema = z.object({
     .max(80)
     .regex(/^[a-zA-Z0-9._-]+$/, "Use only letters, numbers, dot, underscore or hyphen."),
   email: z.string().email().max(190),
-  phone: z.string().trim().min(10).max(40),
+  phone: requiredMobileSchema,
   city: z.string().trim().min(2).max(120),
   sponsorCode: z.string().trim().max(80).optional().nullable(),
   packageValue: z.coerce
@@ -382,7 +398,7 @@ const enquirySchema = z.object({
   type: z.enum(["contact", "distributor", "franchise", "other"]).default("contact"),
   name: z.string().trim().min(2).max(160),
   email: z.string().email().max(190).optional().nullable(),
-  phone: z.string().max(40).optional().nullable(),
+  phone: optionalMobileSchema,
   city: z.string().max(120).optional().nullable(),
   businessType: z.string().max(160).optional().nullable(),
   investmentRange: z.string().max(120).optional().nullable(),
@@ -392,7 +408,7 @@ const distributorSchema = z.object({
   distributorCode: z.string().trim().max(80).optional().nullable().or(z.literal("")),
   name: z.string().trim().min(2).max(160),
   email: z.string().email().max(190).optional().nullable().or(z.literal("")),
-  phone: z.string().max(40).optional().nullable(),
+  phone: optionalMobileSchema,
   city: z.string().max(120).optional().nullable(),
   sponsorCode: z.string().max(80).optional().nullable(),
   status: z.enum(["active", "inactive", "blocked"]).default("active"),
