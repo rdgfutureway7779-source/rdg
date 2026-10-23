@@ -23,11 +23,15 @@ export async function getPool() {
     charset: "utf8mb4",
   };
   const database = identifier(process.env.MYSQL_DATABASE, "rdg");
-  const bootstrap = await mysql.createConnection(config);
-  await bootstrap.query(
-    `CREATE DATABASE IF NOT EXISTS \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
-  );
-  await bootstrap.end();
+  const shouldCreateDatabase =
+    process.env.CREATE_DATABASE === "true" || process.env.NODE_ENV !== "production";
+  if (shouldCreateDatabase) {
+    const bootstrap = await mysql.createConnection(config);
+    await bootstrap.query(
+      `CREATE DATABASE IF NOT EXISTS \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+    );
+    await bootstrap.end();
+  }
   pool = mysql.createPool({ ...config, database });
   return pool;
 }
