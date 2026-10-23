@@ -769,7 +769,15 @@ function BannersView({ setError }: { setError: (value: string) => void }) {
   }, []);
   function open(item?: RecordItem) {
     setEditing(item || {});
-    setForm(item || blank);
+    setForm(
+      item
+        ? {
+            ...item,
+            active: Boolean(item.active),
+            sortOrder: Number(item.sortOrder ?? 0),
+          }
+        : blank,
+    );
   }
   async function save(event: FormEvent) {
     event.preventDefault();
