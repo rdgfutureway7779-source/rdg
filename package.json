@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "server": "node server/index.mjs",
+    "start": "node server/index.mjs",
     "db:migrate": "node server/migrate.mjs",
     "db:seed": "node server/seed.mjs",
     "admin:reset": "node server/reset-admin.mjs",

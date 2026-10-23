@@ -17,6 +17,7 @@ import { seedDatabase } from "./seed.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.resolve(__dirname, "../public/uploads");
+const frontendDist = path.resolve(__dirname, "../dist");
 const port = Number(process.env.PORT || 8787);
 const jwtSecret = process.env.JWT_SECRET;
 const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
@@ -34,6 +35,7 @@ app.use(cors({ origin: corsOrigin.split(",").map((value) => value.trim()), crede
 app.use(express.json({ limit: "3mb" }));
 app.use(cookieParser());
 app.use("/uploads", express.static(uploadDir, { maxAge: "7d" }));
+app.use(express.static(frontendDist, { index: false }));
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -2947,6 +2949,18 @@ app.get("/api/docs", (_req, res) =>
   }),
 );
 
+// In production, serve the Vite build from the same origin as the API.
+// API and upload routes are handled above and are allowed to continue through.
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  if (req.path === "/api" || req.path.startsWith("/api/") || req.path.startsWith("/uploads/")) {
+    return next();
+  }
+  return res.sendFile(path.join(frontendDist, "index.html"), (error) => {
+    if (error) next(error);
+  });
+});
+
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError || error?.code === "LIMIT_FILE_SIZE")
     return fail(res, "File is too large. Maximum size is 8 MB.", 413);
@@ -2956,8 +2970,8 @@ app.use((error, _req, res, _next) => {
   return fail(res, "Something went wrong. Please try again.", 500);
 });
 
-const server = app.listen(port, () => {
-  console.log(`RDG CMS API running on http://localhost:${port}`);
+const server = app.listen(port, "0.0.0.0", () => {
+  console.log(`RDG CMS running on port ${port}`);
 });
 
 const shutdown = async () => {
