@@ -28,11 +28,16 @@ export function Hero() {
   const heroCtaLabel = banner?.ctaLabel || cms?.settings.hero_cta_label || "Discover the Goodness";
   const heroCtaUrl = banner?.ctaUrl || cms?.settings.hero_cta_url || "/products";
   const titleParts = heroTitle.endsWith(" Tomorrow") ? [heroTitle.slice(0, -8), "Tomorrow"] : null;
+  // Older local database exports contain source-only paths such as
+  // `/src/assets/anmol-ratan-hero-v2.png`. Those paths do not exist after Vite
+  // builds the app, so use the bundled image when a legacy path is returned.
+  const heroVisual =
+    banner?.imageUrl && !banner.imageUrl.startsWith("/src/") ? banner.imageUrl : heroImage;
 
   return (
     <section className="relative flex min-h-[calc(100svh-5rem)] items-center overflow-hidden pt-24 pb-8 sm:pt-28 sm:pb-10">
       <img
-        src={banner?.imageUrl || heroImage}
+        src={heroVisual}
         alt={
           banner?.altText ||
           "Anmol Ratan Juice bottle, berry juice and fresh mixed berries in a natural setting"

@@ -11,7 +11,9 @@ export function ProductVisual({
   imageUrl?: string | null;
   productName?: string;
 }) {
-  const image = imageUrl || bottleImage;
+  // `/src/assets/...` is a local development path from older database exports.
+  // Use the Vite-bundled product image in production for those legacy values.
+  const image = imageUrl && !imageUrl.startsWith("/src/") ? imageUrl : bottleImage;
 
   return (
     <div
