@@ -96,20 +96,29 @@ function ProductDetail() {
           (item) => item.id === slug || item.slug === slug || item.name === slug,
         );
         const mapped = (items || []).find((item) => item.slug === slug || String(item.id) === slug);
+        const mappedPrice = mapped ? Number(mapped.price) : NaN;
         setProduct(
           mapped
             ? {
                 ...mapped,
                 price:
-                  mapped.price ??
-                  (mapped.name === "Anmol Ratan Juice" ? ANMOL_RATAN_UNIT_PRICE : null),
+                  Number.isFinite(mappedPrice) && mappedPrice > 0
+                    ? mappedPrice
+                    : mapped.name === "Anmol Ratan Juice"
+                      ? ANMOL_RATAN_UNIT_PRICE
+                      : null,
                 badge: mapped.name === "Anmol Ratan Juice" ? "Signature Product" : "RDG Product",
               }
             : fallback
               ? {
                   ...fallback,
                   slug: fallback.id,
-                  price: fallback.price ?? ANMOL_RATAN_UNIT_PRICE,
+                  price:
+                    Number(fallback.price) > 0
+                      ? fallback.price
+                      : fallback.name === "Anmol Ratan Juice"
+                        ? ANMOL_RATAN_UNIT_PRICE
+                        : null,
                   imageUrl: null,
                   id: fallback.id,
                 }

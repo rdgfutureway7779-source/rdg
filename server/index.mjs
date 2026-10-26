@@ -738,11 +738,7 @@ async function getCustomerCart(customerId) {
   return rows.map((row) => ({
     ...row,
     price:
-      row.price === null
-        ? row.name === "Anmol Ratan Juice"
-          ? 1200
-          : null
-        : Number(row.price),
+      row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
     highlights: parseJson(row.highlights, []),
   }));
 }
@@ -2120,11 +2116,7 @@ app.get(
       rows.map((row) => ({
         ...row,
         price:
-          row.price === null
-            ? row.name === "Anmol Ratan Juice"
-              ? 1200
-              : null
-            : Number(row.price),
+          row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
         highlights: parseJson(row.highlights, []),
       })),
     );
@@ -2592,9 +2584,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 100 * 1024 * 1024 },
   fileFilter: (_req, file, callback) =>
-    callback(null, /^(image\/(jpeg|png|webp|gif)|application\/pdf)$/.test(file.mimetype)),
+    callback(
+      null,
+      /^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm|quicktime)|application\/pdf)$/.test(
+        file.mimetype,
+      ),
+    ),
 });
 const downloadUpload = multer({
   storage,
@@ -2647,7 +2644,7 @@ app.post(
   allowRoles("super_admin", "content_editor"),
   upload.single("file"),
   asyncRoute(async (req, res) => {
-    if (!req.file) return fail(res, "Upload an image or PDF up to 8 MB.", 422);
+    if (!req.file) return fail(res, "Upload an image, video or PDF up to 100 MB.", 422);
     const altText = String(req.body.altText || "").slice(0, 255) || null;
     const url = `/uploads/${req.file.filename}`;
     const [result] = await query(
@@ -2882,6 +2879,20 @@ app.get(
 );
 
 app.get(
+  "/api/public/media",
+  asyncRoute(async (req, res) => {
+    const type = String(req.query.type || "")
+      .trim()
+      .toLowerCase();
+    const where = type === "video" ? "WHERE mime_type LIKE 'video/%'" : "";
+    const [rows] = await query(
+      `SELECT id, original_name AS originalName, mime_type AS mimeType, size_bytes AS sizeBytes, url, alt_text AS altText, created_at AS createdAt FROM media_assets ${where} ORDER BY created_at ASC, id ASC`,
+    );
+    return ok(res, rows);
+  }),
+);
+
+app.get(
   "/api/public/downloads",
   asyncRoute(async (_req, res) => {
     const [rows] = await query(
@@ -2912,11 +2923,7 @@ app.get(
       rows.map((row) => ({
         ...row,
         price:
-          row.price === null
-            ? row.name === "Anmol Ratan Juice"
-              ? 1200
-              : null
-            : Number(row.price),
+          row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
         highlights: parseJson(row.highlights, []),
       })),
     );

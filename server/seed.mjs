@@ -1,6 +1,11 @@
 import "dotenv/config";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import { closePool, migrate, query } from "./db.mjs";
+
+const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
 
 const pages = [
   ["Home", "home", "RDG Future Way home page", "published"],
@@ -65,6 +70,26 @@ const galleryItems = [
     "/uploads/gallery-manufacturing.jpg",
     "RDG manufacturing facility.",
   ],
+];
+
+const mediaAssets = [
+  ...galleryItems.map(([, , url, altText]) => ({
+    originalName: path.basename(url),
+    mimeType: "image/jpeg",
+    url,
+    altText,
+    relativePath: url.replace(/^\//, ""),
+  })),
+  ...Array.from({ length: 7 }, (_, index) => {
+    const originalName = `rdg-video-${String(index + 1).padStart(2, "0")}.mp4`;
+    return {
+      originalName,
+      mimeType: "video/mp4",
+      url: `/videos/${originalName}`,
+      altText: `RDG Future Way video ${index + 1}`,
+      relativePath: `videos/${originalName}`,
+    };
+  }),
 ];
 
 const downloads = [
@@ -165,6 +190,20 @@ export async function seedDatabase() {
     await query(
       "INSERT IGNORE INTO gallery_items (title, tag, image_url, alt_text, status, sort_order) VALUES (?, ?, ?, ?, 'published', ?)",
       [title, tag, imageUrl, altText, galleryItems.findIndex((item) => item[0] === title)],
+    );
+  }
+
+  for (const asset of mediaAssets) {
+    const filePath = path.join(publicDir, asset.relativePath);
+    const file = await fs.stat(filePath).catch(() => null);
+    if (!file) continue;
+    const [existing] = await query("SELECT id FROM media_assets WHERE url = ? LIMIT 1", [
+      asset.url,
+    ]);
+    if (existing.length) continue;
+    await query(
+      "INSERT INTO media_assets (filename, original_name, mime_type, size_bytes, url, alt_text) VALUES (?, ?, ?, ?, ?, ?)",
+      [asset.originalName, asset.originalName, asset.mimeType, file.size, asset.url, asset.altText],
     );
   }
 

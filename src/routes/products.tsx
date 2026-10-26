@@ -55,18 +55,26 @@ function Products() {
   useEffect(() => {
     getPublicProducts().then((data) => {
       if (!data?.length) return;
-      const liveProducts = data.map((item) => ({
-        id: String(item.id),
-        slug: item.slug,
-        name: item.name,
-        category: item.category || "RDG product",
-        subtitle: item.subtitle || "Discover the RDG product range.",
-        description: item.description || "",
-        highlights: item.highlights || [],
-        badge: item.name === "Anmol Ratan Juice" ? "Signature product" : "RDG product",
-        price: item.price ?? (item.name === "Anmol Ratan Juice" ? 1200 : null),
-        imageUrl: item.imageUrl,
-      }));
+      const liveProducts = data.map((item) => {
+        const storedPrice = Number(item.price);
+        return {
+          id: String(item.id),
+          slug: item.slug,
+          name: item.name,
+          category: item.category || "RDG product",
+          subtitle: item.subtitle || "Discover the RDG product range.",
+          description: item.description || "",
+          highlights: item.highlights || [],
+          badge: item.name === "Anmol Ratan Juice" ? "Signature product" : "RDG product",
+          price:
+            Number.isFinite(storedPrice) && storedPrice > 0
+              ? storedPrice
+              : item.name === "Anmol Ratan Juice"
+                ? 1200
+                : null,
+          imageUrl: item.imageUrl,
+        };
+      });
       const liveSlugs = new Set(liveProducts.map((item) => item.slug));
       setCatalogProducts([
         ...liveProducts,

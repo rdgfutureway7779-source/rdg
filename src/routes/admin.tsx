@@ -2847,17 +2847,17 @@ function MediaView({ setError }: { setError: (value: string) => void }) {
   return (
     <ModuleShell
       title="Media library"
-      description="Upload and manage reusable images and PDFs for the website."
+      description="Upload and manage reusable images, videos and PDFs used across the website."
     >
       <form
         onSubmit={upload}
         className="mb-6 flex flex-col gap-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-5 sm:flex-row sm:items-end"
       >
         <label className="flex-1 text-sm font-semibold">
-          File
+          Image, video or PDF
           <input
             type="file"
-            accept="image/*,.pdf"
+            accept="image/*,video/*,.pdf"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             className={`${fieldClass} file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white`}
             required
@@ -2869,7 +2869,7 @@ function MediaView({ setError }: { setError: (value: string) => void }) {
             value={altText}
             onChange={(e) => setAltText(e.target.value)}
             className={fieldClass}
-            placeholder="Describe the image"
+            placeholder="Describe the image or video"
           />
         </label>
         <button disabled={uploading} className={buttonPrimary}>
@@ -2889,6 +2889,14 @@ function MediaView({ setError }: { setError: (value: string) => void }) {
                 alt={item.altText || item.originalName}
                 className="h-36 w-full object-cover"
               />
+            ) : item.mimeType?.startsWith("video/") ? (
+              <video
+                controls
+                preload="metadata"
+                className="h-36 w-full bg-primary-dark object-contain"
+              >
+                <source src={item.url} type={item.mimeType} />
+              </video>
             ) : (
               <div className="flex h-36 items-center justify-center bg-surface">
                 <FileText className="h-8 w-8 text-primary" />

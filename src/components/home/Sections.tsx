@@ -61,18 +61,26 @@ export function FeaturedProducts() {
     getPublicProducts().then((data) => {
       if (data?.length) {
         setItems(
-          data.map((item) => ({
-            id: String(item.id),
-            slug: item.slug,
-            name: item.name,
-            category: item.category || "RDG Product",
-            subtitle: item.subtitle || "Discover the RDG product range.",
-            description: item.description || "",
-            highlights: item.highlights || [],
-            badge: item.name === "Anmol Ratan Juice" ? "Signature Product" : "RDG Product",
-            price: item.price,
-            imageUrl: item.imageUrl,
-          })),
+          data.map((item) => {
+            const storedPrice = Number(item.price);
+            return {
+              id: String(item.id),
+              slug: item.slug,
+              name: item.name,
+              category: item.category || "RDG Product",
+              subtitle: item.subtitle || "Discover the RDG product range.",
+              description: item.description || "",
+              highlights: item.highlights || [],
+              badge: item.name === "Anmol Ratan Juice" ? "Signature Product" : "RDG Product",
+              price:
+                Number.isFinite(storedPrice) && storedPrice > 0
+                  ? storedPrice
+                  : item.name === "Anmol Ratan Juice"
+                    ? 1200
+                    : null,
+              imageUrl: item.imageUrl,
+            };
+          }),
         );
       }
     });

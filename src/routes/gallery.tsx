@@ -12,8 +12,9 @@ import {
 import { galleryItems } from "@/data/gallery";
 
 type GalleryItem = { title: string; tag: string; image: string; alt: string };
+type GalleryVideo = { id: number | string; title: string; url: string; mimeType: string };
 
-const videoItems = [
+const fallbackVideoItems: GalleryVideo[] = [
   "rdg-video-01.mp4",
   "rdg-video-02.mp4",
   "rdg-video-03.mp4",
@@ -21,7 +22,12 @@ const videoItems = [
   "rdg-video-05.mp4",
   "rdg-video-06.mp4",
   "rdg-video-07.mp4",
-];
+].map((fileName, index) => ({
+  id: fileName,
+  title: `RDG Video ${String(index + 1).padStart(2, "0")}`,
+  url: `/videos/${fileName}`,
+  mimeType: "video/mp4",
+}));
 
 function uniqueGalleryItems(items: GalleryItem[]) {
   const seen = new Set<string>();
@@ -37,6 +43,7 @@ function Gallery() {
   const [tag, setTag] = useState("All");
   const reduceMotion = useReducedMotion();
   const [items, setItems] = useState<GalleryItem[]>(() => uniqueGalleryItems([...galleryItems]));
+  const [videoItems, setVideoItems] = useState<GalleryVideo[]>(fallbackVideoItems);
   useEffect(() => {
     fetch("/api/public/gallery")
       .then((response) => (response.ok ? response.json() : null))
@@ -52,6 +59,25 @@ function Gallery() {
                   alt: item.altText || item.title,
                 }),
               ),
+            ),
+          );
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    fetch("/api/public/media?type=video")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (payload?.success && payload.data?.length) {
+          setVideoItems(
+            payload.data.map(
+              (item: { id: number; originalName: string; url: string; mimeType: string }) => ({
+                id: item.id,
+                title: item.originalName,
+                url: item.url,
+                mimeType: item.mimeType,
+              }),
             ),
           );
         }
@@ -180,7 +206,7 @@ function Gallery() {
             <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {videoItems.map((video, index) => (
                 <article
-                  key={video}
+                  key={video.id}
                   className="overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
                 >
                   <div className="relative bg-primary-dark">
@@ -191,7 +217,7 @@ function Gallery() {
                       aria-label={`RDG video ${index + 1}`}
                       className="aspect-video w-full object-contain"
                     >
-                      <source src={`/videos/${video}`} type="video/mp4" />
+                      <source src={video.url} type={video.mimeType} />
                       Your browser does not support the video tag.
                     </video>
                     <span className="pointer-events-none absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-primary-dark/75 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
@@ -201,7 +227,7 @@ function Gallery() {
                   </div>
                   <div className="p-5">
                     <h3 className="font-display text-lg font-bold text-foreground">
-                      RDG Video {String(index + 1).padStart(2, "0")}
+                      {video.title}
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
                       RDG Future Way media upload.
