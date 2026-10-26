@@ -106,7 +106,7 @@ function Gallery() {
             AI-generated sample images for illustration. Select a photo to view it in full.
           </p>
 
-          <div className="mt-8 columns-1 gap-5 sm:columns-2 lg:columns-3">
+          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item, i) => (
               <Dialog key={item.title}>
                 <DialogTrigger asChild>
@@ -117,14 +117,9 @@ function Gallery() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: (i % 6) * 0.05 }}
-                    className="card-lift group mb-5 block w-full break-inside-avoid overflow-hidden rounded-3xl border border-border bg-card text-left shadow-soft focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
+                    className="card-lift group block h-full w-full overflow-hidden rounded-3xl border border-border bg-card text-left shadow-soft focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
                   >
-                    <div
-                      className={
-                        "relative overflow-hidden bg-muted " +
-                        (i % 3 === 0 ? "h-72" : i % 3 === 1 ? "h-52" : "h-60")
-                      }
-                    >
+                    <div className="relative h-60 overflow-hidden bg-muted">
                       <img
                         src={item.image}
                         alt={item.alt}
