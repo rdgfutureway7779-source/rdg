@@ -4,7 +4,6 @@ import {
   Calculator,
   CheckCircle2,
   Crown,
-  Gem,
   HandCoins,
   Network,
   ShieldCheck,
@@ -14,6 +13,21 @@ import {
 import { motion } from "motion/react";
 import generationPlanBreadcrumbImage from "@/assets/generation-plan-breadcrumb.png";
 import rankPlanImage from "@/assets/ai-rank-plan.png";
+import rankSymbol01 from "@/assets/rank-symbols/level-01.png";
+import rankSymbol02 from "@/assets/rank-symbols/level-02.png";
+import rankSymbol03 from "@/assets/rank-symbols/level-03.png";
+import rankSymbol04 from "@/assets/rank-symbols/level-04.png";
+import rankSymbol05 from "@/assets/rank-symbols/level-05.png";
+import rankSymbol06 from "@/assets/rank-symbols/level-06.png";
+import rankSymbol07 from "@/assets/rank-symbols/level-07.png";
+import rankSymbol08 from "@/assets/rank-symbols/level-08.png";
+import rankSymbol09 from "@/assets/rank-symbols/level-09.png";
+import rankSymbol10 from "@/assets/rank-symbols/level-10.png";
+import rankSymbol11 from "@/assets/rank-symbols/level-11.png";
+import rankSymbol12 from "@/assets/rank-symbols/level-12.png";
+import rankSymbol13 from "@/assets/rank-symbols/level-13.png";
+import rankSymbol14 from "@/assets/rank-symbols/level-14.png";
+import rankSymbol15 from "@/assets/rank-symbols/level-15.png";
 import { bonuses, directReferralPlans, planLevels } from "@/data/site";
 
 const money = (value: number) =>
@@ -59,39 +73,36 @@ const rankThemes = [
   "border-orange-200 bg-orange-50 text-orange-950",
 ];
 
-const crownTiers = [
-  "border-slate-300 bg-white/80 text-slate-500 shadow-[0_4px_14px_rgba(100,116,139,0.22)]",
-  "border-sky-300 bg-white/80 text-sky-600 shadow-[0_4px_14px_rgba(14,165,233,0.24)]",
-  "border-rose-300 bg-white/80 text-rose-600 shadow-[0_4px_14px_rgba(244,63,94,0.24)]",
-  "border-amber-300 bg-white/80 text-amber-600 shadow-[0_4px_14px_rgba(245,158,11,0.3)]",
-  "border-slate-400 bg-white/80 text-slate-600 shadow-[0_4px_14px_rgba(71,85,105,0.28)]",
-  "border-yellow-400 bg-white/80 text-yellow-600 shadow-[0_4px_14px_rgba(234,179,8,0.32)]",
-  "border-cyan-300 bg-white/80 text-cyan-600 shadow-[0_4px_14px_rgba(6,182,212,0.28)]",
-  "border-blue-300 bg-white/80 text-blue-600 shadow-[0_4px_14px_rgba(37,99,235,0.28)]",
-  "border-violet-300 bg-white/80 text-violet-600 shadow-[0_4px_14px_rgba(124,58,237,0.28)]",
-  "border-teal-300 bg-white/80 text-teal-600 shadow-[0_4px_14px_rgba(13,148,136,0.28)]",
-  "border-purple-400 bg-white/80 text-purple-700 shadow-[0_4px_18px_rgba(126,34,206,0.34)]",
-  "border-red-400 bg-white/80 text-red-700 shadow-[0_4px_18px_rgba(185,28,28,0.34)]",
-  "border-emerald-400 bg-white/80 text-emerald-700 shadow-[0_4px_18px_rgba(4,120,87,0.34)]",
-  "border-indigo-400 bg-white/80 text-indigo-700 shadow-[0_4px_18px_rgba(67,56,202,0.34)]",
-  "border-orange-400 bg-white/80 text-orange-700 shadow-[0_4px_22px_rgba(194,65,12,0.4)]",
+const rankSymbolImages = [
+  rankSymbol01,
+  rankSymbol02,
+  rankSymbol03,
+  rankSymbol04,
+  rankSymbol05,
+  rankSymbol06,
+  rankSymbol07,
+  rankSymbol08,
+  rankSymbol09,
+  rankSymbol10,
+  rankSymbol11,
+  rankSymbol12,
+  rankSymbol13,
+  rankSymbol14,
+  rankSymbol15,
 ];
 
-function PremiumCrown({ level }: { level: number }) {
-  const isDiamond = level >= 11;
+function RankSymbol({ level }: { level: number }) {
   return (
     <span
-      title={`${isDiamond ? "Premium diamond" : "Premium crown"} for level ${level}`}
-      className={`relative flex h-10 w-10 items-center justify-center rounded-2xl border ${crownTiers[level - 1]}`}
+      title={`${rankNames[level - 1]} symbol`}
+      className="relative -translate-y-2 flex h-24 w-24 shrink-0 items-center justify-center overflow-visible rounded-2xl border-0 bg-transparent p-0 shadow-none"
     >
-      {isDiamond ? (
-        <Gem className="h-5 w-5" strokeWidth={1.8} fill="currentColor" />
-      ) : (
-        <Crown className="h-5 w-5" strokeWidth={1.8} fill="currentColor" />
-      )}
-      {isDiamond && (
-        <Sparkles className="absolute -top-2 -right-2 h-4 w-4 text-gold" fill="currentColor" />
-      )}
+      <img
+        aria-hidden="true"
+        alt=""
+        src={rankSymbolImages[level - 1]}
+        className="h-full w-full object-contain drop-shadow-[0_5px_6px_rgba(15,23,42,0.2)]"
+      />
     </span>
   );
 }
@@ -234,7 +245,7 @@ function GenerationPlan() {
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-dark font-display text-lg font-extrabold text-primary-foreground shadow-soft">
                     {item.level}
                   </span>
-                  <PremiumCrown level={item.level} />
+                  <RankSymbol level={item.level} />
                 </div>
                 <h3 className="mt-5 min-h-12 font-display text-lg leading-tight font-extrabold capitalize">
                   {rankNames[index]}

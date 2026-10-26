@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Expand } from "lucide-react";
+import { Expand, PlayCircle, Video } from "lucide-react";
 import galleryBreadcrumbImage from "@/assets/gallery-breadcrumb.png";
 import {
   Dialog,
@@ -13,23 +13,45 @@ import { galleryItems } from "@/data/gallery";
 
 type GalleryItem = { title: string; tag: string; image: string; alt: string };
 
+const videoItems = [
+  "rdg-video-01.mp4",
+  "rdg-video-02.mp4",
+  "rdg-video-03.mp4",
+  "rdg-video-04.mp4",
+  "rdg-video-05.mp4",
+  "rdg-video-06.mp4",
+  "rdg-video-07.mp4",
+];
+
+function uniqueGalleryItems(items: GalleryItem[]) {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = item.image.trim();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function Gallery() {
   const [tag, setTag] = useState("All");
   const reduceMotion = useReducedMotion();
-  const [items, setItems] = useState<GalleryItem[]>([...galleryItems]);
+  const [items, setItems] = useState<GalleryItem[]>(() => uniqueGalleryItems([...galleryItems]));
   useEffect(() => {
     fetch("/api/public/gallery")
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
         if (payload?.success && payload.data?.length) {
           setItems(
-            payload.data.map(
-              (item: { title: string; tag: string; imageUrl: string; altText?: string }) => ({
-                title: item.title,
-                tag: item.tag,
-                image: item.imageUrl,
-                alt: item.altText || item.title,
-              }),
+            uniqueGalleryItems(
+              payload.data.map(
+                (item: { title: string; tag: string; imageUrl: string; altText?: string }) => ({
+                  title: item.title,
+                  tag: item.tag,
+                  image: item.imageUrl,
+                  alt: item.altText || item.title,
+                }),
+              ),
             ),
           );
         }
@@ -140,6 +162,59 @@ function Gallery() {
                 </DialogContent>
               </Dialog>
             ))}
+          </div>
+
+          <div className="mt-20 border-t border-border pt-12">
+            <div className="flex flex-wrap items-end justify-between gap-5">
+              <div>
+                <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.22em] text-primary uppercase">
+                  <Video className="h-4 w-4" /> RDG videos
+                </p>
+                <h2 className="mt-3 font-display text-3xl font-bold text-foreground sm:text-4xl">
+                  Watch the RDG community in motion
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  Product, community and business videos shared by RDG Future Way.
+                </p>
+              </div>
+              <span className="rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground shadow-soft">
+                {videoItems.length} videos
+              </span>
+            </div>
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {videoItems.map((video, index) => (
+                <article
+                  key={video}
+                  className="overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
+                >
+                  <div className="relative bg-primary-dark">
+                    <video
+                      controls
+                      preload="metadata"
+                      playsInline
+                      aria-label={`RDG video ${index + 1}`}
+                      className="aspect-video w-full object-contain"
+                    >
+                      <source src={`/videos/${video}`} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                    <span className="pointer-events-none absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-primary-dark/75 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+                      <PlayCircle className="h-3.5 w-3.5" /> Video{" "}
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-display text-lg font-bold text-foreground">
+                      RDG Video {String(index + 1).padStart(2, "0")}
+                    </h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      RDG Future Way media upload.
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>

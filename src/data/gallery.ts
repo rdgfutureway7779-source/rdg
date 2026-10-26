@@ -4,10 +4,6 @@ import productLaunch from "@/assets/gallery/product-launch.jpg";
 import trainingCamp from "@/assets/gallery/training-camp.jpg";
 import manufacturing from "@/assets/gallery/manufacturing.jpg";
 
-// Reuse the available gallery artwork until the remaining dedicated images are added.
-const treePlantation = trainingCamp;
-const carReward = productLaunch;
-const kisanAwareness = manufacturing;
 const dubaiTour = leadershipMeet;
 
 export const galleryItems = [
@@ -40,24 +36,6 @@ export const galleryItems = [
     tag: "Office",
     image: manufacturing,
     alt: "Illustrative beverage bottling line with stainless steel equipment and workers.",
-  },
-  {
-    title: "Tree Plantation Drive",
-    tag: "CSR",
-    image: treePlantation,
-    alt: "Illustration of volunteers planting a sapling together in a community park.",
-  },
-  {
-    title: "Car Achievers Handover",
-    tag: "Rewards",
-    image: carReward,
-    alt: "Illustrative car recognition ceremony with a ribbon-decorated white car.",
-  },
-  {
-    title: "Kisan Awareness Program",
-    tag: "CSR",
-    image: kisanAwareness,
-    alt: "Illustration of an agronomist discussing a seedling with farmers beside a field.",
   },
   {
     title: "Foreign Tour — Dubai",
