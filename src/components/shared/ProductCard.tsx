@@ -1,6 +1,11 @@
 import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import bottleImage from "@/assets/anmol-ratan-juice-bottle.png";
 import type { Product } from "@/data/site";
+
+function resolveProductImage(imageUrl?: string | null) {
+  return imageUrl && !imageUrl.startsWith("/src/") ? imageUrl : bottleImage;
+}
 
 export function ProductVisual({
   compact = false,
@@ -11,9 +16,11 @@ export function ProductVisual({
   imageUrl?: string | null;
   productName?: string;
 }) {
-  // `/src/assets/...` is a local development path from older database exports.
-  // Use the Vite-bundled product image in production for those legacy values.
-  const image = imageUrl && !imageUrl.startsWith("/src/") ? imageUrl : bottleImage;
+  const [image, setImage] = useState(() => resolveProductImage(imageUrl));
+
+  useEffect(() => {
+    setImage(resolveProductImage(imageUrl));
+  }, [imageUrl]);
 
   return (
     <div
@@ -27,6 +34,7 @@ export function ProductVisual({
         alt={`${productName} product image`}
         width={1024}
         height={1536}
+        onError={() => setImage(bottleImage)}
         className={`relative max-h-full w-auto object-contain drop-shadow-2xl ${compact ? "h-52" : "h-[29rem]"}`}
       />
     </div>

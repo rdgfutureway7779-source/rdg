@@ -1,5 +1,6 @@
 import { ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import bottleImage from "@/assets/anmol-ratan-juice-bottle.png";
 import {
   getCustomerCart,
   getCustomerMe,
@@ -11,6 +12,21 @@ import {
   type Customer,
   type CustomerCartItem,
 } from "@/lib/customer-api";
+
+function CartProductImage({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+  const [src, setSrc] = useState(
+    imageUrl && !imageUrl.startsWith("/src/") ? imageUrl : bottleImage,
+  );
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      onError={() => setSrc(bottleImage)}
+      className="h-full w-full object-contain p-3"
+    />
+  );
+}
 
 function Cart() {
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -157,15 +173,7 @@ function Cart() {
                   className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-soft sm:flex-row sm:items-center"
                 >
                   <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface">
-                    {item.imageUrl && !item.imageUrl.startsWith("/src/") ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="h-full w-full object-contain p-3"
-                      />
-                    ) : (
-                      <ShoppingBag className="h-8 w-8 text-primary" />
-                    )}
+                    <CartProductImage imageUrl={item.imageUrl} name={item.name} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold tracking-wide text-primary uppercase">

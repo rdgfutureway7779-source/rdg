@@ -217,8 +217,6 @@ function ProductDetail() {
     );
   }
 
-  const hasUploadedImage = Boolean(product.imageUrl && !product.imageUrl.startsWith("/src/"));
-
   return (
     <section className="bg-surface py-16 sm:py-24">
       <div className="container-x">
@@ -230,15 +228,7 @@ function ProductDetail() {
         </a>
         <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-card">
-            {hasUploadedImage ? (
-              <img
-                src={product.imageUrl!}
-                alt={product.name}
-                className="h-[32rem] w-full object-contain p-8"
-              />
-            ) : (
-              <ProductVisual />
-            )}
+            <ProductVisual imageUrl={product.imageUrl} productName={product.name} />
           </div>
           <div className="rounded-[2rem] border border-border bg-card p-7 shadow-card sm:p-10">
             <span className="bg-gold-grad inline-flex rounded-full px-4 py-2 text-xs font-bold text-gold-foreground uppercase">
