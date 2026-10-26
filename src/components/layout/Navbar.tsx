@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import logo from "@/assets/logo-transparent.png";
-import { navigation, products } from "@/data/site";
+import { catalogDemoProducts, navigation, products } from "@/data/site";
 import { getCustomerCart, getCustomerMe, type Customer } from "@/lib/customer-api";
 import { getPublicProducts } from "@/lib/cms";
 import { languageOptions, useLanguage } from "@/lib/i18n";
@@ -26,7 +26,11 @@ export function Navbar() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [cartCount, setCartCount] = useState(0);
   const [productCategories, setProductCategories] = useState(() =>
-    Array.from(new Set(products.map((product) => product.category).filter(Boolean))),
+    Array.from(
+      new Set(
+        [...products, ...catalogDemoProducts].map((product) => product.category).filter(Boolean),
+      ),
+    ),
   );
   const { language, setLanguage } = useLanguage();
   const currentPath = typeof window === "undefined" ? "/" : window.location.pathname;
@@ -49,7 +53,10 @@ export function Navbar() {
     getPublicProducts().then((items) => {
       if (!items?.length) return;
       const categories = Array.from(
-        new Set(items.map((item) => item.category?.trim()).filter(Boolean) as string[]),
+        new Set([
+          ...[...products, ...catalogDemoProducts].map((product) => product.category),
+          ...(items.map((item) => item.category?.trim()).filter(Boolean) as string[]),
+        ]),
       );
       if (categories.length) setProductCategories(categories);
     });
@@ -138,7 +145,7 @@ export function Navbar() {
                         transition={{ duration: 0.18 }}
                         className="absolute left-1/2 top-full w-[22rem] -translate-x-1/2 pt-4"
                       >
-                        <div className="glass overflow-hidden rounded-3xl bg-white/90 p-2 shadow-card">
+                        <div className="glass max-h-[70vh] overflow-y-auto rounded-3xl bg-white/90 p-2 shadow-card">
                           {item.children.map((child) => (
                             <a
                               key={child.label}

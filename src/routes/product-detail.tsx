@@ -20,11 +20,10 @@ import {
 } from "@/lib/customer-api";
 
 const productPackages = [
-  { id: "pack-1", label: "Package 1", units: 1 },
-  { id: "pack-2", label: "Package 2", units: 2 },
-  { id: "pack-3", label: "Package 3", units: 3 },
-  { id: "pack-4", label: "Package 4", units: 4 },
-  { id: "pack-5", label: "Package 5", units: 5 },
+  { id: "pack-1", label: "Package 1", units: 5, price: 3500 },
+  { id: "pack-2", label: "Package 2", units: 10, price: 7000 },
+  { id: "pack-3", label: "Package 3", units: 15, price: 10500 },
+  { id: "pack-4", label: "Package 4", units: 20, price: 14000 },
 ];
 
 const ANMOL_RATAN_UNIT_PRICE = 1200;
@@ -128,7 +127,7 @@ function ProductDetail() {
       : product?.price == null
         ? null
         : Number(product.price);
-  const packageTotal = unitPrice === null ? null : unitPrice * selectedPackage.units * quantity;
+  const packageTotal = unitPrice === null ? null : selectedPackage.price * quantity;
   const cartQuantity = selectedPackage.units * quantity;
 
   async function addToCart(buyNow = false) {
@@ -294,9 +293,8 @@ function ProductDetail() {
                 >
                   {productPackages.map((packageOption) => (
                     <option key={packageOption.id} value={packageOption.id}>
-                      {packageOption.label} —{" "}
-                      {money(unitPrice === null ? null : unitPrice * packageOption.units)} (
-                      {packageOption.units} product{packageOption.units === 1 ? "" : "s"})
+                      {packageOption.label} — {money(packageOption.price)} ({packageOption.units}{" "}
+                      bottles)
                     </option>
                   ))}
                 </select>
@@ -304,8 +302,7 @@ function ProductDetail() {
               <div className="mt-3 flex items-center justify-between gap-3 text-sm">
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <PackageCheck className="h-4 w-4 text-secondary" /> {selectedPackage.units}{" "}
-                  product
-                  {selectedPackage.units === 1 ? "" : "s"} in this package
+                  bottles in this package
                 </span>
                 <span className="font-bold text-primary">{money(packageTotal)}</span>
               </div>
