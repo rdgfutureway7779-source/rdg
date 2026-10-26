@@ -4,7 +4,8 @@ import bottleImage from "@/assets/anmol-ratan-juice-bottle.png";
 import type { Product } from "@/data/site";
 
 function resolveProductImage(imageUrl?: string | null) {
-  return imageUrl && !imageUrl.startsWith("/src/") ? imageUrl : bottleImage;
+  const isCatalogAsset = imageUrl?.startsWith("/src/assets/catalog/");
+  return imageUrl && (!imageUrl.startsWith("/src/") || isCatalogAsset) ? imageUrl : bottleImage;
 }
 
 export function ProductVisual({

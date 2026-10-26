@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
-import { products, type Product } from "@/data/site";
+import { catalogDemoProducts, products, type Product } from "@/data/site";
 import { getPublicProducts } from "@/lib/cms";
 
 const money = (value: number | null | undefined) =>
@@ -19,12 +19,35 @@ const money = (value: number | null | undefined) =>
     ? "Price on request"
     : `₹${Number(value).toLocaleString("en-IN")}`;
 
+const categoryCatalog = [
+  "Mobiles & Computers",
+  "TV, Appliances & Electronics",
+  "Men's Fashion",
+  "Women's Fashion",
+  "Toys, Baby Products & Kids' Fashion",
+  "Car, Motorbike & Industrial",
+  "Books",
+  "Movies, Music & Video Games",
+  "Ayurvedic & Herbal",
+  "Wellness & Nutrition",
+  "Personal Care",
+  "Home, Kitchen & Pets",
+  "Beauty, Health & Grocery",
+  "Sports, Fitness, Bags & Luggage",
+  "Agriculture & Garden",
+  "Business Packages",
+  "Offers & Bundles",
+];
+
 function Products() {
   const [activeCategory, setActiveCategory] = useState(() => {
-    if (typeof window === "undefined") return "All products";
-    return new URLSearchParams(window.location.search).get("category") || "All products";
+    if (typeof window === "undefined") return "All categories";
+    return new URLSearchParams(window.location.search).get("category") || "All categories";
   });
-  const [catalogProducts, setCatalogProducts] = useState<Product[]>(products);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([
+    ...products,
+    ...catalogDemoProducts,
+  ]);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("featured");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -32,32 +55,41 @@ function Products() {
   useEffect(() => {
     getPublicProducts().then((data) => {
       if (!data?.length) return;
-      setCatalogProducts(
-        data.map((item) => ({
-          id: String(item.id),
-          slug: item.slug,
-          name: item.name,
-          category: item.category || "RDG product",
-          subtitle: item.subtitle || "Discover the RDG product range.",
-          description: item.description || "",
-          highlights: item.highlights || [],
-          badge: item.name === "Anmol Ratan Juice" ? "Signature product" : "RDG product",
-          price: item.price,
-          imageUrl: item.imageUrl,
-        })),
-      );
+      const liveProducts = data.map((item) => ({
+        id: String(item.id),
+        slug: item.slug,
+        name: item.name,
+        category: item.category || "RDG product",
+        subtitle: item.subtitle || "Discover the RDG product range.",
+        description: item.description || "",
+        highlights: item.highlights || [],
+        badge: item.name === "Anmol Ratan Juice" ? "Signature product" : "RDG product",
+        price: item.price ?? (item.name === "Anmol Ratan Juice" ? 1200 : null),
+        imageUrl: item.imageUrl,
+      }));
+      const liveSlugs = new Set(liveProducts.map((item) => item.slug));
+      setCatalogProducts([
+        ...liveProducts,
+        ...catalogDemoProducts.filter((item) => !liveSlugs.has(item.slug)),
+      ]);
     });
   }, []);
 
   const categories = useMemo(
     () => [
-      { label: "All products", count: catalogProducts.length },
-      ...Array.from(new Set(catalogProducts.map((item) => item.category).filter(Boolean))).map(
-        (category) => ({
+      { label: "All categories", count: catalogProducts.length },
+      ...categoryCatalog.map((label) => ({
+        label,
+        count: catalogProducts.filter(
+          (item) => item.category === label || item.category.includes(label),
+        ).length,
+      })),
+      ...Array.from(new Set(catalogProducts.map((item) => item.category).filter(Boolean)))
+        .filter((category) => !categoryCatalog.some((label) => category.includes(label)))
+        .map((category) => ({
           label: category,
           count: catalogProducts.filter((item) => item.category === category).length,
-        }),
-      ),
+        })),
     ],
     [catalogProducts],
   );
@@ -65,7 +97,10 @@ function Products() {
   const visibleItems = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filtered = catalogProducts.filter((item) => {
-      const matchesCategory = activeCategory === "All products" || item.category === activeCategory;
+      const matchesCategory =
+        activeCategory === "All categories" ||
+        item.category === activeCategory ||
+        (categoryCatalog.includes(activeCategory) && item.category.includes(activeCategory));
       const matchesSearch =
         !query ||
         [item.name, item.category, item.subtitle, item.description].some((value) =>
@@ -82,7 +117,7 @@ function Products() {
   }, [activeCategory, catalogProducts, search, sort]);
 
   const clearFilters = () => {
-    setActiveCategory("All products");
+    setActiveCategory("All categories");
     setSearch("");
     setSort("featured");
   };

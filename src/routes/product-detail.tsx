@@ -1,7 +1,15 @@
-import { ArrowLeft, CheckCircle2, Minus, Plus, ShoppingCart } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Minus,
+  PackageCheck,
+  Plus,
+  ShoppingCart,
+  Zap,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
-import { products } from "@/data/site";
+import { catalogDemoProducts, products } from "@/data/site";
 import { getPublicProducts, type PublicProduct } from "@/lib/cms";
 import {
   addToCustomerCart,
@@ -10,6 +18,16 @@ import {
   getCustomerCart,
   updateCustomerCart,
 } from "@/lib/customer-api";
+
+const productPackages = [
+  { id: "pack-1", label: "Package 1", units: 1 },
+  { id: "pack-2", label: "Package 2", units: 2 },
+  { id: "pack-3", label: "Package 3", units: 3 },
+  { id: "pack-4", label: "Package 4", units: 4 },
+  { id: "pack-5", label: "Package 5", units: 5 },
+];
+
+const ANMOL_RATAN_UNIT_PRICE = 1200;
 
 const money = (value: number | null | undefined) =>
   value === null || value === undefined || Number.isNaN(Number(value))
@@ -25,6 +43,7 @@ function ProductDetail() {
   const slug = typeof window === "undefined" ? "" : window.location.pathname.split("/").pop() || "";
   const [product, setProduct] = useState<(PublicProduct & { badge?: string }) | null>(null);
   const [quantity, setQuantity] = useState(quantityFromUrl);
+  const [selectedPackageId, setSelectedPackageId] = useState(productPackages[0].id);
   const [cartItemExists, setCartItemExists] = useState(false);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -74,19 +93,24 @@ function ProductDetail() {
   useEffect(() => {
     getPublicProducts()
       .then((items) => {
-        const fallback = products.find((item) => item.id === slug || item.name === slug);
+        const fallback = [...products, ...catalogDemoProducts].find(
+          (item) => item.id === slug || item.slug === slug || item.name === slug,
+        );
         const mapped = (items || []).find((item) => item.slug === slug || String(item.id) === slug);
         setProduct(
           mapped
             ? {
                 ...mapped,
+                price:
+                  mapped.price ??
+                  (mapped.name === "Anmol Ratan Juice" ? ANMOL_RATAN_UNIT_PRICE : null),
                 badge: mapped.name === "Anmol Ratan Juice" ? "Signature Product" : "RDG Product",
               }
             : fallback
               ? {
                   ...fallback,
                   slug: fallback.id,
-                  price: null,
+                  price: fallback.price ?? ANMOL_RATAN_UNIT_PRICE,
                   imageUrl: null,
                   id: fallback.id,
                 }
@@ -96,7 +120,18 @@ function ProductDetail() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  async function addToCart() {
+  const selectedPackage =
+    productPackages.find((item) => item.id === selectedPackageId) || productPackages[0];
+  const unitPrice =
+    product?.name === "Anmol Ratan Juice"
+      ? ANMOL_RATAN_UNIT_PRICE
+      : product?.price == null
+        ? null
+        : Number(product.price);
+  const packageTotal = unitPrice === null ? null : unitPrice * selectedPackage.units * quantity;
+  const cartQuantity = selectedPackage.units * quantity;
+
+  async function addToCart(buyNow = false) {
     if (!product || typeof product.id !== "number") {
       setError("This product is not available for online ordering yet.");
       return;
@@ -105,15 +140,16 @@ function ProductDetail() {
       setAdding(true);
       setError("");
       const items = cartItemExists
-        ? await updateCustomerCart(product.id, quantity)
-        : await addToCustomerCart(product.id, quantity);
+        ? await updateCustomerCart(product.id, cartQuantity)
+        : await addToCustomerCart(product.id, cartQuantity);
       const saved = items.find((item) => Number(item.productId) === Number(product.id));
       cartItemExistsRef.current = Boolean(saved);
       setCartItemExists(Boolean(saved));
-      quantityRef.current = saved?.quantity ?? quantity;
-      setQuantity(saved?.quantity ?? quantity);
-      broadcastCustomerCartChange(product.id, saved?.quantity ?? quantity);
+      quantityRef.current = saved?.quantity ?? cartQuantity;
+      setQuantity(saved?.quantity ?? cartQuantity);
+      broadcastCustomerCartChange(product.id, saved?.quantity ?? cartQuantity);
       setAdded(true);
+      if (buyNow) window.location.href = "/checkout";
     } catch (reason) {
       if ((reason as Error & { status?: number }).status === 401) {
         window.location.href = `/customer/login?redirect=${encodeURIComponent(window.location.pathname)}`;
@@ -241,7 +277,39 @@ function ProductDetail() {
               {product.name}
             </h1>
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{product.subtitle}</p>
-            <p className="mt-6 text-3xl font-bold text-primary">{money(product.price)}</p>
+            <div className="mt-6 flex flex-wrap items-end gap-3">
+              <p className="text-3xl font-bold text-primary">{money(unitPrice)}</p>
+              <span className="pb-1 text-sm text-muted-foreground">per product</span>
+            </div>
+
+            <div className="mt-7 rounded-2xl border border-primary/15 bg-primary/5 p-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-foreground">
+                  Product package
+                </span>
+                <select
+                  value={selectedPackageId}
+                  onChange={(event) => setSelectedPackageId(event.target.value)}
+                  className="field bg-card"
+                >
+                  {productPackages.map((packageOption) => (
+                    <option key={packageOption.id} value={packageOption.id}>
+                      {packageOption.label} —{" "}
+                      {money(unitPrice === null ? null : unitPrice * packageOption.units)} (
+                      {packageOption.units} product{packageOption.units === 1 ? "" : "s"})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <PackageCheck className="h-4 w-4 text-secondary" /> {selectedPackage.units}{" "}
+                  product
+                  {selectedPackage.units === 1 ? "" : "s"} in this package
+                </span>
+                <span className="font-bold text-primary">{money(packageTotal)}</span>
+              </div>
+            </div>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <div className="flex items-center rounded-full border border-border bg-surface">
@@ -274,9 +342,17 @@ function ProductDetail() {
               </div>
               <button
                 type="button"
-                onClick={() => void addToCart()}
+                onClick={() => void addToCart(true)}
                 disabled={adding}
                 className="bg-brand inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-card disabled:opacity-60"
+              >
+                <Zap className="h-4 w-4" /> {adding ? "Processing…" : "Buy now"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void addToCart()}
+                disabled={adding}
+                className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-card px-6 py-3.5 text-sm font-semibold text-primary shadow-soft disabled:opacity-60"
               >
                 <ShoppingCart className="h-4 w-4" /> {adding ? "Adding…" : "Add to cart"}
               </button>

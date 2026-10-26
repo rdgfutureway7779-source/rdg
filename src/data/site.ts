@@ -1,3 +1,13 @@
+import agricultureImage from "@/assets/catalog/agriculture.png";
+import businessImage from "@/assets/catalog/business.png";
+import electronicsImage from "@/assets/catalog/electronics.png";
+import familyImage from "@/assets/catalog/family.png";
+import fashionImage from "@/assets/catalog/fashion.png";
+import fitnessImage from "@/assets/catalog/fitness.png";
+import homeBeautyImage from "@/assets/catalog/home-beauty.png";
+import mediaImage from "@/assets/catalog/media.png";
+import mensFashionImage from "@/assets/catalog/mens-fashion.png";
+
 export const company = {
   name: "RDG Future Way Pvt. Ltd.",
   short: "RDG Future Way",
@@ -82,6 +92,231 @@ export type Product = {
   imageUrl?: string | null;
 };
 
+const demoImageByCategory: Record<string, string> = {
+  "Mobiles & Computers": electronicsImage,
+  "TV, Appliances & Electronics": electronicsImage,
+  "Men's Fashion": mensFashionImage,
+  "Women's Fashion": fashionImage,
+  "Toys, Baby Products & Kids' Fashion": familyImage,
+  "Car, Motorbike & Industrial": electronicsImage,
+  Books: mediaImage,
+  "Movies, Music & Video Games": mediaImage,
+  "Ayurvedic & Herbal": homeBeautyImage,
+  "Wellness & Nutrition": homeBeautyImage,
+  "Personal Care": homeBeautyImage,
+  "Home, Kitchen & Pets": homeBeautyImage,
+  "Beauty, Health & Grocery": homeBeautyImage,
+  "Sports, Fitness, Bags & Luggage": fitnessImage,
+  "Agriculture & Garden": agricultureImage,
+  "Business Packages": businessImage,
+  "Offers & Bundles": businessImage,
+};
+
+export const catalogDemoProducts: Product[] = [
+  {
+    id: "demo-mobiles-computers",
+    slug: "demo-mobiles-computers",
+    name: "Smart Fitness Band",
+    category: "Mobiles & Computers",
+    subtitle: "Step tracking, heart-rate monitoring, sleep insights and daily activity reminders.",
+    description:
+      "A market-style demo listing for a lightweight fitness band with a colour display and everyday activity tracking.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Popular demo",
+    price: 2499,
+  },
+  {
+    id: "demo-tv-appliances-electronics",
+    slug: "demo-tv-appliances-electronics",
+    name: "Smart LED TV 43-inch",
+    category: "TV, Appliances & Electronics",
+    subtitle:
+      "Full HD smart television with streaming apps, built-in speakers and screen mirroring.",
+    description:
+      "A market-style demo listing for a family entertainment television with smart connectivity.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "New demo",
+    price: 28999,
+  },
+  {
+    id: "demo-mens-fashion",
+    slug: "demo-mens-fashion",
+    name: "Men's Active Dry-Fit T-Shirt",
+    category: "Men's Fashion",
+    subtitle:
+      "Breathable quick-dry training T-shirt for gym sessions, running and everyday movement.",
+    description: "A market-style demo listing for a comfortable men's performance T-shirt.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Bestseller demo",
+    price: 899,
+  },
+  {
+    id: "demo-womens-fashion",
+    slug: "demo-womens-fashion",
+    name: "Women's Cotton Kurta Set",
+    category: "Women's Fashion",
+    subtitle:
+      "Soft cotton kurta set with a comfortable fit for workdays, errands and casual occasions.",
+    description: "A market-style demo listing for an everyday women's cotton outfit.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Trending demo",
+    price: 1499,
+  },
+  {
+    id: "demo-toys-baby-kids",
+    slug: "demo-toys-baby-kids",
+    name: "STEM Building Blocks Set",
+    category: "Toys, Baby Products & Kids' Fashion",
+    subtitle: "Colourful construction blocks designed for creative play and early problem solving.",
+    description: "A market-style demo listing for an educational building set for children.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Kids demo",
+    price: 799,
+  },
+  {
+    id: "demo-car-motorbike-industrial",
+    slug: "demo-car-motorbike-industrial",
+    name: "Magnetic Car Phone Holder",
+    category: "Car, Motorbike & Industrial",
+    subtitle:
+      "Dashboard-mounted mobile holder with one-hand fitting for daily commutes and road trips.",
+    description: "A market-style demo listing for a compact vehicle phone-mount accessory.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Auto demo",
+    price: 699,
+  },
+  {
+    id: "demo-books",
+    slug: "demo-books",
+    name: "Everyday Wellness Guide",
+    category: "Books",
+    subtitle:
+      "A practical guide to balanced routines, mindful habits and family wellness planning.",
+    description: "A market-style demo listing for a personal wellness and lifestyle paperback.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Book demo",
+    price: 399,
+  },
+  {
+    id: "demo-movies-music-games",
+    slug: "demo-movies-music-games",
+    name: "Wireless Headphones",
+    category: "Movies, Music & Video Games",
+    subtitle:
+      "Comfort-fit wireless headphones with deep bass, hands-free calling and long battery life.",
+    description: "A market-style demo listing for everyday music, podcasts and entertainment.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Audio demo",
+    price: 1799,
+  },
+  {
+    id: "demo-ayurvedic-herbal",
+    slug: "demo-ayurvedic-herbal",
+    name: "Herbal Immunity Care Kit",
+    category: "Ayurvedic & Herbal",
+    subtitle: "A curated herbal care bundle for everyday family wellness routines.",
+    description: "A market-style demo listing for an ayurvedic-inspired herbal wellness bundle.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Wellness demo",
+    price: 1299,
+  },
+  {
+    id: "demo-wellness-nutrition",
+    slug: "demo-wellness-nutrition",
+    name: "Daily Protein Nutrition Mix",
+    category: "Wellness & Nutrition",
+    subtitle:
+      "A convenient nutrition mix for smoothies, breakfast bowls and post-workout routines.",
+    description:
+      "A market-style demo listing for a daily nutrition supplement with a family-friendly format.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Nutrition demo",
+    price: 1599,
+  },
+  {
+    id: "demo-personal-care",
+    slug: "demo-personal-care",
+    name: "Herbal Shampoo & Body Wash Set",
+    category: "Personal Care",
+    subtitle: "Gentle everyday cleansing set with refreshing herbal fragrance and easy family use.",
+    description: "A market-style demo listing for a personal-care cleansing duo.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Care demo",
+    price: 699,
+  },
+  {
+    id: "demo-home-kitchen-pets",
+    slug: "demo-home-kitchen-pets",
+    name: "Non-Stick Cookware Starter Set",
+    category: "Home, Kitchen & Pets",
+    subtitle: "Practical everyday cookware set for quick family meals and compact kitchens.",
+    description: "A market-style demo listing for an everyday kitchen cookware starter set.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Home demo",
+    price: 2199,
+  },
+  {
+    id: "demo-beauty-health-grocery",
+    slug: "demo-beauty-health-grocery",
+    name: "Vitamin C Face Care Kit",
+    category: "Beauty, Health & Grocery",
+    subtitle: "A simple cleanser, serum and moisturiser routine for daily personal care.",
+    description: "A market-style demo listing for a compact beauty and self-care routine.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Beauty demo",
+    price: 1199,
+  },
+  {
+    id: "demo-sports-fitness-bags",
+    slug: "demo-sports-fitness-bags",
+    name: "Home Gym Starter Kit",
+    category: "Sports, Fitness, Bags & Luggage",
+    subtitle: "Resistance bands, skipping rope and training mat for simple home workouts.",
+    description: "A market-style demo listing for a compact home fitness starter kit.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Fitness demo",
+    price: 1899,
+  },
+  {
+    id: "demo-agriculture-garden",
+    slug: "demo-agriculture-garden",
+    name: "Organic Plant Growth Kit",
+    category: "Agriculture & Garden",
+    subtitle: "Seed starter mix, compost support and basic tools for a home kitchen garden.",
+    description: "A market-style demo listing for beginner-friendly gardening and plant care.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Garden demo",
+    price: 999,
+  },
+  {
+    id: "demo-business-packages",
+    slug: "demo-business-packages",
+    name: "Small Business Starter Kit",
+    category: "Business Packages",
+    subtitle: "Sample business materials, product guide and onboarding resources for new sellers.",
+    description: "A market-style demo listing for a direct-selling business onboarding package.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Business demo",
+    price: 3499,
+  },
+  {
+    id: "demo-offers-bundles",
+    slug: "demo-offers-bundles",
+    name: "Family Wellness Value Bundle",
+    category: "Offers & Bundles",
+    subtitle:
+      "A multi-item family bundle combining everyday wellness and personal-care essentials.",
+    description:
+      "A market-style demo listing for a value bundle with a simple family shopping format.",
+    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
+    badge: "Value demo",
+    price: 2499,
+  },
+].map((product) => ({
+  ...product,
+  imageUrl: demoImageByCategory[product.category],
+}));
+
 export const products: Product[] = [
   {
     id: "anmol-ratan-juice",
@@ -97,6 +332,7 @@ export const products: Product[] = [
       "Designed for everyday family wellness routines",
     ],
     badge: "Signature Product",
+    price: 1200,
   },
 ];
 
