@@ -26,7 +26,8 @@ export function getCustomerCartLineTotal(
   if (item.name === "Anmol Ratan Juice" && quantity >= 5 && quantity % 5 === 0) {
     return quantity * 700;
   }
-  return Number(item.price || 0) * quantity;
+  const unitPrice = item.price ?? (item.name === "Anmol Ratan Juice" ? 1200 : 0);
+  return Number(unitPrice) * quantity;
 }
 
 export const customerCartSyncKey = "rdg-customer-cart-sync";

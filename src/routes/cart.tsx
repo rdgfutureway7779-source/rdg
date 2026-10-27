@@ -34,6 +34,7 @@ function Cart() {
   const [items, setItems] = useState<CustomerCartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [updatingProductId, setUpdatingProductId] = useState<number | null>(null);
 
   useEffect(() => {
     getCustomerMe().then((profile) => {
@@ -80,21 +81,34 @@ function Cart() {
   }, []);
 
   async function changeQuantity(item: CustomerCartItem, quantity: number) {
+    const previousItems = items;
+    const isRemoving = quantity <= 0;
+    setError("");
+    setUpdatingProductId(item.productId);
+    setItems((current) =>
+      isRemoving
+        ? current.filter((currentItem) => currentItem.productId !== item.productId)
+        : current.map((currentItem) =>
+            currentItem.productId === item.productId ? { ...currentItem, quantity } : currentItem,
+          ),
+    );
+
     try {
-      setItems(await updateCustomerCart(item.productId, quantity));
-      broadcastCustomerCartChange(item.productId, quantity);
+      const nextItems = isRemoving
+        ? await removeFromCustomerCart(item.productId)
+        : await updateCustomerCart(item.productId, quantity);
+      setItems(nextItems);
+      broadcastCustomerCartChange(item.productId, isRemoving ? null : quantity);
     } catch (reason) {
+      setItems(previousItems);
       setError(reason instanceof Error ? reason.message : "Unable to update cart.");
+    } finally {
+      setUpdatingProductId(null);
     }
   }
 
   async function remove(item: CustomerCartItem) {
-    try {
-      setItems(await removeFromCustomerCart(item.productId));
-      broadcastCustomerCartChange(item.productId, null);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to remove cart item.");
-    }
+    await changeQuantity(item, 0);
   }
 
   async function signOut() {
@@ -189,49 +203,56 @@ function Cart() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center rounded-full border border-border bg-surface">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void changeQuantity(
-                            item,
-                            Math.max(
-                              item.name === "Anmol Ratan Juice" ? 5 : 1,
-                              item.quantity - (item.name === "Anmol Ratan Juice" ? 5 : 1),
-                            ),
-                          )
-                        }
-                        className="p-2.5 text-primary"
-                        aria-label="Decrease quantity"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="min-w-8 text-center text-sm font-bold">{item.quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void changeQuantity(
-                            item,
-                            Math.min(
-                              item.name === "Anmol Ratan Juice" ? 95 : 99,
-                              item.quantity + (item.name === "Anmol Ratan Juice" ? 5 : 1),
-                            ),
-                          )
-                        }
-                        className="p-2.5 text-primary"
-                        aria-label="Increase quantity"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void remove(item)}
-                      className="rounded-full p-2.5 text-destructive hover:bg-destructive/10"
-                      aria-label={`Remove ${item.name}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {(() => {
+                      const isAnmol = item.name === "Anmol Ratan Juice";
+                      const step = isAnmol ? 5 : 1;
+                      const minimum = isAnmol ? 5 : 1;
+                      const maximum = isAnmol ? 95 : 99;
+                      const isUpdating = updatingProductId === item.productId;
+                      const nextQuantity = item.quantity <= minimum ? 0 : item.quantity - step;
+                      const canIncrease = item.quantity < maximum;
+
+                      return (
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center rounded-full border border-border bg-surface">
+                            <button
+                              type="button"
+                              onClick={() => void changeQuantity(item, nextQuantity)}
+                              disabled={isUpdating}
+                              className="p-2.5 text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={
+                                item.quantity <= minimum
+                                  ? `Remove ${item.name}`
+                                  : "Decrease quantity"
+                              }
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            <span className="min-w-8 text-center text-sm font-bold">
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => void changeQuantity(item, item.quantity + step)}
+                              disabled={isUpdating || !canIncrease}
+                              className="p-2.5 text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void remove(item)}
+                            disabled={isUpdating}
+                            className="rounded-full p-2.5 text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            aria-label={`Remove ${item.name}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </article>
               ))}
