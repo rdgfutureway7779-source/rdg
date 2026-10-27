@@ -72,7 +72,7 @@ const fieldClass =
   "mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15";
 
 export function AdminLogin() {
-  const [email, setEmail] = useState("admin@rdgfutureway.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -136,14 +136,14 @@ export function AdminLogin() {
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Sign in to manage your public website content.
           </p>
-          <form className="mt-8 space-y-5" onSubmit={submit}>
+          <form className="mt-8 space-y-5" onSubmit={submit} autoComplete="off">
             <label className="block text-sm font-semibold text-foreground">
               Email
               <input
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 type="email"
-                autoComplete="username"
+                autoComplete="off"
                 className={fieldClass}
                 required
               />
@@ -154,7 +154,7 @@ export function AdminLogin() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 className={fieldClass}
                 required
               />
