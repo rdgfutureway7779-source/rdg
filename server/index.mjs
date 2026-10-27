@@ -24,12 +24,30 @@ const jwtSecret = process.env.JWT_SECRET;
 const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
 const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
 const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+const databaseImageLimit = 8 * 1024 * 1024;
 
 if (!jwtSecret || jwtSecret.length < 24)
   throw new Error("JWT_SECRET must be at least 24 characters.");
 await fs.mkdir(uploadDir, { recursive: true });
 await migrate();
 await seedDatabase();
+
+async function backfillDatabaseImages() {
+  const [assets] = await query(
+    "SELECT id, filename, size_bytes AS sizeBytes FROM media_assets WHERE mime_type LIKE 'image/%' AND file_data IS NULL",
+  );
+  for (const asset of assets) {
+    if (Number(asset.sizeBytes) > databaseImageLimit) continue;
+    const fileData = await fs.readFile(path.join(uploadDir, asset.filename)).catch(() => null);
+    if (!fileData || fileData.length > databaseImageLimit) continue;
+    await query("UPDATE media_assets SET file_data = ?, url = ? WHERE id = ?", [
+      fileData,
+      `/api/media/${asset.id}`,
+      asset.id,
+    ]);
+  }
+}
+await backfillDatabaseImages();
 
 const app = express();
 app.disable("x-powered-by");
@@ -2924,12 +2942,32 @@ function fileSizeLabel(sizeBytes) {
 }
 
 app.get(
+  "/api/media/:id",
+  asyncRoute(async (req, res) => {
+    const id = idSchema.parse(req.params.id);
+    const [[asset]] = await query(
+      "SELECT filename, mime_type AS mimeType, file_data AS fileData, url FROM media_assets WHERE id = ? LIMIT 1",
+      [id],
+    );
+    if (!asset) return fail(res, "Media asset not found.", 404);
+    if (asset.fileData) {
+      res.set("Content-Type", asset.mimeType);
+      res.set("Cache-Control", "public, max-age=31536000, immutable");
+      return res.send(asset.fileData);
+    }
+    return res.redirect(
+      asset.url === `/api/media/${id}` ? `/uploads/${asset.filename}` : asset.url,
+    );
+  }),
+);
+
+app.get(
   "/api/admin/media",
   requireAuth,
   asyncRoute(async (req, res) => {
     const search = String(req.query.q || "").trim();
     const [rows] = await query(
-      `SELECT id, filename, original_name AS originalName, mime_type AS mimeType, size_bytes AS sizeBytes, url, alt_text AS altText, created_at AS createdAt FROM media_assets ${search ? "WHERE original_name LIKE ?" : ""} ORDER BY created_at DESC`,
+      `SELECT id, filename, original_name AS originalName, mime_type AS mimeType, size_bytes AS sizeBytes, file_data IS NOT NULL AS storedInDatabase, url, alt_text AS altText, created_at AS createdAt FROM media_assets ${search ? "WHERE original_name LIKE ?" : ""} ORDER BY created_at DESC`,
       search ? [`%${search}%`] : [],
     );
     return ok(res, rows);
@@ -2944,23 +2982,48 @@ app.post(
   asyncRoute(async (req, res) => {
     if (!req.file) return fail(res, "Upload an image, video or PDF up to 100 MB.", 422);
     const altText = String(req.body.altText || "").slice(0, 255) || null;
-    const url = `/uploads/${req.file.filename}`;
-    const [result] = await query(
-      "INSERT INTO media_assets (filename, original_name, mime_type, size_bytes, url, alt_text, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [
-        req.file.filename,
-        req.file.originalname,
-        req.file.mimetype,
-        req.file.size,
-        url,
-        altText,
-        req.user.id,
-      ],
-    );
-    await activity(req.user, "upload", "media", result.insertId, {
-      filename: req.file.originalname,
-    });
-    return ok(res, { id: result.insertId, url, filename: req.file.filename }, 201);
+    const isImage = req.file.mimetype.startsWith("image/");
+    if (isImage && req.file.size > databaseImageLimit) {
+      await fs.unlink(req.file.path).catch(() => undefined);
+      return fail(
+        res,
+        "Images must be 8 MB or smaller so they can be stored in the database.",
+        413,
+      );
+    }
+    const fileData = isImage ? await fs.readFile(req.file.path) : null;
+    try {
+      const diskUrl = `/uploads/${req.file.filename}`;
+      const [result] = await query(
+        "INSERT INTO media_assets (filename, original_name, mime_type, size_bytes, file_data, url, alt_text, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          req.file.filename,
+          req.file.originalname,
+          req.file.mimetype,
+          req.file.size,
+          fileData,
+          diskUrl,
+          altText,
+          req.user.id,
+        ],
+      );
+      const url = isImage ? `/api/media/${result.insertId}` : diskUrl;
+      if (isImage) {
+        await query("UPDATE media_assets SET url = ? WHERE id = ?", [url, result.insertId]);
+      }
+      await activity(req.user, "upload", "media", result.insertId, {
+        filename: req.file.originalname,
+        storedInDatabase: isImage,
+      });
+      return ok(
+        res,
+        { id: result.insertId, url, filename: req.file.filename, storedInDatabase: isImage },
+        201,
+      );
+    } catch (error) {
+      await fs.unlink(req.file.path).catch(() => undefined);
+      throw error;
+    }
   }),
 );
 

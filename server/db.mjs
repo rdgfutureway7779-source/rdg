@@ -73,6 +73,14 @@ export async function migrate() {
       "ALTER TABLE customer_orders ADD COLUMN payment_reference VARCHAR(100) NULL AFTER payment_method",
     );
   }
+  const [mediaFileDataColumn] = await activePool.query(
+    "SHOW COLUMNS FROM media_assets LIKE 'file_data'",
+  );
+  if (!mediaFileDataColumn.length) {
+    await activePool.query(
+      "ALTER TABLE media_assets ADD COLUMN file_data MEDIUMBLOB NULL AFTER size_bytes",
+    );
+  }
 }
 
 export async function closePool() {

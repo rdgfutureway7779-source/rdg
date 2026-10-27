@@ -175,6 +175,7 @@ CREATE TABLE IF NOT EXISTS media_assets (
   original_name VARCHAR(255) NOT NULL,
   mime_type VARCHAR(120) NOT NULL,
   size_bytes BIGINT UNSIGNED NOT NULL,
+  file_data MEDIUMBLOB NULL,
   url VARCHAR(500) NOT NULL,
   alt_text VARCHAR(255) NULL,
   uploaded_by BIGINT UNSIGNED NULL,

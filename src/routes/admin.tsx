@@ -2907,6 +2907,9 @@ function MediaView({ setError }: { setError: (value: string) => void }) {
               <p className="mt-1 text-xs text-muted-foreground">
                 {Math.round(item.sizeBytes / 1024)} KB
               </p>
+              {item.storedInDatabase && (
+                <p className="mt-1 text-xs font-semibold text-secondary">Database copy saved</p>
+              )}
               <button
                 onClick={() => remove(item.id)}
                 className="mt-3 text-xs font-semibold text-destructive"
