@@ -1,6 +1,7 @@
 import { ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import bottleImage from "@/assets/anmol-ratan-juice-bottle.png";
+import { getCatalogImageForCategory } from "@/data/site";
 import {
   getCustomerCart,
   getCustomerMe,
@@ -14,16 +15,25 @@ import {
   type CustomerCartItem,
 } from "@/lib/customer-api";
 
-function CartProductImage({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+function CartProductImage({
+  imageUrl,
+  name,
+  category,
+}: {
+  imageUrl?: string | null;
+  name: string;
+  category?: string | null;
+}) {
+  const fallbackImage = getCatalogImageForCategory(category) || bottleImage;
   const [src, setSrc] = useState(
-    imageUrl && !imageUrl.startsWith("/src/") ? imageUrl : bottleImage,
+    imageUrl && !imageUrl.startsWith("/src/") ? imageUrl : fallbackImage,
   );
 
   return (
     <img
       src={src}
       alt={name}
-      onError={() => setSrc(bottleImage)}
+      onError={() => setSrc(fallbackImage)}
       className="h-full w-full object-contain p-3"
     />
   );
@@ -188,7 +198,11 @@ function Cart() {
                   className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-soft sm:flex-row sm:items-center"
                 >
                   <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface">
-                    <CartProductImage imageUrl={item.imageUrl} name={item.name} />
+                    <CartProductImage
+                      imageUrl={item.imageUrl}
+                      name={item.name}
+                      category={item.category}
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold tracking-wide text-primary uppercase">

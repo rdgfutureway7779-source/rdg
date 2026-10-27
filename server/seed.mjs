@@ -137,6 +137,121 @@ const events = [
   ],
 ];
 
+const catalogProducts = [
+  [
+    "demo-mobiles-computers",
+    "Smart Fitness Band",
+    "Mobiles & Computers",
+    "Step tracking, heart-rate monitoring, sleep insights and daily activity reminders.",
+    2499,
+  ],
+  [
+    "demo-tv-appliances-electronics",
+    "Smart LED TV 43-inch",
+    "TV, Appliances & Electronics",
+    "Full HD smart television with streaming apps, built-in speakers and screen mirroring.",
+    28999,
+  ],
+  [
+    "demo-mens-fashion",
+    "Men's Active Dry-Fit T-Shirt",
+    "Men's Fashion",
+    "Breathable quick-dry training T-shirt for gym sessions, running and everyday movement.",
+    899,
+  ],
+  [
+    "demo-womens-fashion",
+    "Women's Cotton Kurta Set",
+    "Women's Fashion",
+    "Soft cotton kurta set with a comfortable fit for workdays, errands and casual occasions.",
+    1499,
+  ],
+  [
+    "demo-footwear",
+    "Everyday Comfort Sneakers",
+    "Footwear",
+    "Lightweight everyday sneakers designed for comfortable walking and active routines.",
+    1999,
+  ],
+  [
+    "demo-toys-baby-kids",
+    "STEM Building Blocks Set",
+    "Toys, Baby Products & Kids' Fashion",
+    "Colourful construction blocks designed for creative play and early problem solving.",
+    799,
+  ],
+  [
+    "demo-car-motorbike-industrial",
+    "Magnetic Car Phone Holder",
+    "Car, Motorbike & Industrial",
+    "Dashboard-mounted mobile holder with one-hand fitting for daily commutes and road trips.",
+    699,
+  ],
+  [
+    "demo-books",
+    "Everyday Wellness Guide",
+    "Books",
+    "A practical guide to balanced routines, mindful habits and family wellness planning.",
+    399,
+  ],
+  [
+    "demo-movies-music-games",
+    "Wireless Headphones",
+    "Movies, Music & Video Games",
+    "Comfort-fit wireless headphones with deep bass, hands-free calling and long battery life.",
+    1799,
+  ],
+  [
+    "demo-ayurvedic-herbal",
+    "Herbal Immunity Care Kit",
+    "Ayurvedic & Herbal",
+    "A curated herbal care bundle for everyday family wellness routines.",
+    1299,
+  ],
+  [
+    "demo-wellness-nutrition",
+    "Daily Protein Nutrition Mix",
+    "Wellness & Nutrition",
+    "A convenient nutrition mix for smoothies, breakfast bowls and post-workout routines.",
+    1599,
+  ],
+  [
+    "demo-personal-care",
+    "Herbal Shampoo & Body Wash Set",
+    "Personal Care",
+    "Gentle everyday cleansing set with refreshing herbal fragrance and easy family use.",
+    699,
+  ],
+  [
+    "demo-home-kitchen-pets",
+    "Non-Stick Cookware Starter Set",
+    "Home, Kitchen & Pets",
+    "Practical everyday cookware set for quick family meals and compact kitchens.",
+    2199,
+  ],
+  [
+    "demo-beauty-health-grocery",
+    "Vitamin C Face Care Kit",
+    "Beauty, Health & Grocery",
+    "A simple cleanser, serum and moisturiser routine for daily personal care.",
+    1199,
+  ],
+  [
+    "demo-sports-fitness-bags",
+    "Home Gym Starter Kit",
+    "Sports, Fitness, Bags & Luggage",
+    "Resistance bands, skipping rope and training mat for simple home workouts.",
+    1899,
+  ],
+  [
+    "demo-agriculture-garden",
+    "Organic Plant Growth Kit",
+    "Agriculture & Garden",
+    "Seed starter mix, compost support and basic tools for a home kitchen garden.",
+    999,
+  ],
+];
+
 function categorySlug(value) {
   return (
     value
@@ -225,6 +340,28 @@ export async function seedDatabase() {
         eventType,
         seats,
         events.findIndex((item) => item[0] === slug),
+      ],
+    );
+  }
+
+  for (const [index, [slug, name, category, subtitle, price]] of catalogProducts.entries()) {
+    await query(
+      `INSERT IGNORE INTO products
+       (name, slug, category, subtitle, description, highlights, price, image_url, status, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'published', ?)`,
+      [
+        name,
+        slug,
+        category,
+        subtitle,
+        `Order ${name} online from the RDG Future Way product catalogue. ${subtitle}`,
+        JSON.stringify([
+          "Available for online ordering",
+          "Secure customer checkout",
+          "RDG product catalogue",
+        ]),
+        price,
+        index + 10,
       ],
     );
   }
