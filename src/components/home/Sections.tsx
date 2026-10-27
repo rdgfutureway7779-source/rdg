@@ -103,10 +103,22 @@ export function FeaturedProducts() {
             View product details <ArrowRight className="h-4 w-4" />
           </a>
         </div>
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
+        <div className="product-carousel mt-12" aria-label="Featured products carousel">
+          <div className="product-carousel-track">
+            {[0, 1].map((copy) => (
+              <div
+                key={copy}
+                className="product-carousel-group"
+                aria-hidden={copy === 1 ? "true" : undefined}
+              >
+                {items.map((p) => (
+                  <div key={`${copy}-${p.id}`} className="product-carousel-card">
+                    <ProductCard product={p} />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
