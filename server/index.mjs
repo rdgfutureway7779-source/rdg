@@ -33,7 +33,18 @@ await seedDatabase();
 
 const app = express();
 app.disable("x-powered-by");
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+      directives: {
+        scriptSrc: ["'self'", "https://checkout.razorpay.com"],
+        connectSrc: ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com"],
+        frameSrc: ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com"],
+      },
+    },
+  }),
+);
 app.use(cors({ origin: corsOrigin.split(",").map((value) => value.trim()), credentials: true }));
 app.use(express.json({ limit: "3mb" }));
 app.use(cookieParser());
