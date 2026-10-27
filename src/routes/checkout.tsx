@@ -1,13 +1,17 @@
 import { ArrowLeft, CheckCircle2, CreditCard, MapPin, ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
+  createCustomerPaymentOrder,
   createCustomerOrder,
   getCustomerCart,
   getCustomerMe,
+  getCustomerCartLineTotal,
+  verifyCustomerPayment,
   type Customer,
   type CustomerCartItem,
 } from "@/lib/customer-api";
 import { isValidMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
+import { loadRazorpayCheckout, type RazorpayCheckoutResponse } from "@/lib/razorpay";
 
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
@@ -17,6 +21,7 @@ function Checkout() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "cash_on_delivery">("razorpay");
   const [form, setForm] = useState({
     shippingName: "",
     shippingPhone: "",
@@ -53,8 +58,7 @@ function Checkout() {
   const hasPrices =
     items.length > 0 && items.every((item) => item.price !== null && item.price !== undefined);
   const subtotal = useMemo(
-    () =>
-      hasPrices ? items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0) : null,
+    () => (hasPrices ? items.reduce((sum, item) => sum + getCustomerCartLineTotal(item), 0) : null),
     [hasPrices, items],
   );
   const shippingFee = subtotal === null ? null : subtotal >= 999 ? 0 : 99;
@@ -72,12 +76,62 @@ function Checkout() {
       return;
     }
     setSubmitting(true);
+    let paymentDialogOpened = false;
     try {
-      const order = await createCustomerOrder({ ...form, paymentMethod: "cash_on_delivery" });
-      window.location.href = `/account/orders?placed=${encodeURIComponent(order.orderNumber)}`;
+      if (paymentMethod === "cash_on_delivery") {
+        const order = await createCustomerOrder({ ...form, paymentMethod });
+        window.location.href = `/account/orders?placed=${encodeURIComponent(order.orderNumber)}`;
+        return;
+      }
+
+      const paymentOrder = await createCustomerPaymentOrder();
+      await loadRazorpayCheckout();
+      if (!window.Razorpay) throw new Error("Razorpay checkout is unavailable.");
+      const checkout = new window.Razorpay({
+        key: paymentOrder.keyId,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency,
+        name: "RDG Future Way Pvt. Ltd.",
+        description: "Anmol Ratan Juice order",
+        order_id: paymentOrder.orderId,
+        prefill: {
+          name: form.shippingName,
+          email: customer?.email || "",
+          contact: form.shippingPhone,
+        },
+        notes: { customer_id: String(customer?.id || "") },
+        theme: { color: "#0b6b4b" },
+        handler: (response) => {
+          void completeOnlinePayment(response);
+        },
+        modal: {
+          ondismiss: () => setSubmitting(false),
+        },
+      });
+      checkout.on("payment.failed", (response) => {
+        setError(response.error?.description || "Payment failed. Please try again.");
+        setSubmitting(false);
+      });
+      checkout.open();
+      paymentDialogOpened = true;
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to place your order.");
     } finally {
+      if (!paymentDialogOpened) setSubmitting(false);
+    }
+  }
+
+  async function completeOnlinePayment(response: RazorpayCheckoutResponse) {
+    try {
+      const order = await verifyCustomerPayment({
+        ...form,
+        razorpayOrderId: response.razorpay_order_id,
+        razorpayPaymentId: response.razorpay_payment_id,
+        razorpaySignature: response.razorpay_signature,
+      });
+      window.location.href = `/account/orders?placed=${encodeURIComponent(order.orderNumber)}`;
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to verify your payment.");
       setSubmitting(false);
     }
   }
@@ -220,14 +274,42 @@ function Checkout() {
               </div>
             </div>
             <div className="mt-7 rounded-2xl border border-primary/15 bg-primary/5 p-4">
-              <div className="flex items-center gap-3">
-                <CreditCard className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-semibold text-foreground">Cash on delivery</p>
-                  <p className="text-xs text-muted-foreground">
-                    Online payment can be enabled by RDG later.
-                  </p>
-                </div>
+              <p className="text-sm font-semibold text-foreground">Payment method</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border bg-card p-4">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="razorpay"
+                    checked={paymentMethod === "razorpay"}
+                    onChange={() => setPaymentMethod("razorpay")}
+                    className="mt-1 accent-primary"
+                  />
+                  <span>
+                    <span className="flex items-center gap-2 font-semibold text-foreground">
+                      <CreditCard className="h-4 w-4 text-primary" /> Pay online
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      UPI, cards, netbanking and wallets via Razorpay.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border bg-card p-4">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash_on_delivery"
+                    checked={paymentMethod === "cash_on_delivery"}
+                    onChange={() => setPaymentMethod("cash_on_delivery")}
+                    className="mt-1 accent-primary"
+                  />
+                  <span>
+                    <span className="font-semibold text-foreground">Cash on delivery</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      The RDG team will confirm your order by phone.
+                    </span>
+                  </span>
+                </label>
               </div>
             </div>
             {error && (
@@ -240,7 +322,15 @@ function Checkout() {
               disabled={submitting || !hasPrices}
               className="bg-brand mt-7 w-full rounded-full py-3.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
-              {submitting ? "Placing order…" : hasPrices ? "Place order" : "Price unavailable"}
+              {submitting
+                ? paymentMethod === "razorpay"
+                  ? "Opening Razorpay…"
+                  : "Placing order…"
+                : hasPrices
+                  ? paymentMethod === "razorpay"
+                    ? "Pay securely"
+                    : "Place order"
+                  : "Price unavailable"}
             </button>
           </form>
 
@@ -255,7 +345,7 @@ function Checkout() {
                   <span className="font-semibold">
                     {item.price === null || item.price === undefined
                       ? "Price on request"
-                      : money(Number(item.price) * item.quantity)}
+                      : money(getCustomerCartLineTotal(item))}
                   </span>
                 </div>
               ))}
@@ -311,9 +401,9 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="field"
-                type={label === "Mobile number" ? "tel" : "text"}
-                inputMode={label === "Mobile number" ? "numeric" : undefined}
-                maxLength={label === "Mobile number" ? 16 : undefined}
+        type={label === "Mobile number" ? "tel" : "text"}
+        inputMode={label === "Mobile number" ? "numeric" : undefined}
+        maxLength={label === "Mobile number" ? 16 : undefined}
         required={required}
       />
     </label>

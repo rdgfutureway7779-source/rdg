@@ -4,6 +4,7 @@ import bottleImage from "@/assets/anmol-ratan-juice-bottle.png";
 import {
   getCustomerCart,
   getCustomerMe,
+  getCustomerCartLineTotal,
   broadcastCustomerCartChange,
   customerCartSyncKey,
   logoutCustomer,
@@ -125,7 +126,7 @@ function Cart() {
   }
 
   const hasPrices = items.every((item) => item.price !== null && item.price !== undefined);
-  const total = items.reduce((sum, item) => sum + Number(item.price || 0) * item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + getCustomerCartLineTotal(item), 0);
 
   return (
     <section className="bg-surface py-16 sm:py-24">
@@ -183,7 +184,7 @@ function Cart() {
                     <p className="mt-1 text-sm text-muted-foreground">{item.subtitle}</p>
                     <p className="mt-3 text-sm font-semibold text-primary">
                       {item.price
-                        ? `₹${Number(item.price).toLocaleString("en-IN")}`
+                        ? `₹${(getCustomerCartLineTotal(item) / item.quantity).toLocaleString("en-IN")} per item`
                         : "Price on request"}
                     </p>
                   </div>
@@ -191,7 +192,15 @@ function Cart() {
                     <div className="flex items-center rounded-full border border-border bg-surface">
                       <button
                         type="button"
-                        onClick={() => void changeQuantity(item, Math.max(1, item.quantity - 1))}
+                        onClick={() =>
+                          void changeQuantity(
+                            item,
+                            Math.max(
+                              item.name === "Anmol Ratan Juice" ? 5 : 1,
+                              item.quantity - (item.name === "Anmol Ratan Juice" ? 5 : 1),
+                            ),
+                          )
+                        }
                         className="p-2.5 text-primary"
                         aria-label="Decrease quantity"
                       >
@@ -200,7 +209,15 @@ function Cart() {
                       <span className="min-w-8 text-center text-sm font-bold">{item.quantity}</span>
                       <button
                         type="button"
-                        onClick={() => void changeQuantity(item, Math.min(99, item.quantity + 1))}
+                        onClick={() =>
+                          void changeQuantity(
+                            item,
+                            Math.min(
+                              item.name === "Anmol Ratan Juice" ? 95 : 99,
+                              item.quantity + (item.name === "Anmol Ratan Juice" ? 5 : 1),
+                            ),
+                          )
+                        }
                         className="p-2.5 text-primary"
                         aria-label="Increase quantity"
                       >

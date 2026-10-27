@@ -7,7 +7,7 @@ import {
   ShoppingCart,
   Zap,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
 import { catalogDemoProducts, products } from "@/data/site";
 import { getPublicProducts, type PublicProduct } from "@/lib/cms";
@@ -27,6 +27,9 @@ const productPackages = [
 ];
 
 const ANMOL_RATAN_UNIT_PRICE = 1200;
+
+const isNonAnmolPackage = (name: string, category?: string | null) =>
+  name !== "Anmol Ratan Juice" && /package|bundle/i.test(`${name} ${category || ""}`);
 
 const money = (value: number | null | undefined) =>
   value === null || value === undefined || Number.isNaN(Number(value))
@@ -74,8 +77,12 @@ function ProductDetail() {
         cartItemExistsRef.current = Boolean(cartItem);
         setCartItemExists(Boolean(cartItem));
         if (cartItem) {
-          quantityRef.current = cartItem.quantity;
-          setQuantity(cartItem.quantity);
+          const displayQuantity =
+            product?.name === "Anmol Ratan Juice"
+              ? Math.max(1, Math.round(cartItem.quantity / productPackages[0].units))
+              : cartItem.quantity;
+          quantityRef.current = displayQuantity;
+          setQuantity(displayQuantity);
         }
       })
       .catch(() => {
@@ -87,15 +94,21 @@ function ProductDetail() {
     return () => {
       active = false;
     };
-  }, [product?.id]);
+  }, [product?.id, product?.name]);
 
   useEffect(() => {
     getPublicProducts()
       .then((items) => {
         const fallback = [...products, ...catalogDemoProducts].find(
-          (item) => item.id === slug || item.slug === slug || item.name === slug,
+          (item) =>
+            (item.id === slug || item.slug === slug || item.name === slug) &&
+            !isNonAnmolPackage(item.name, item.category),
         );
-        const mapped = (items || []).find((item) => item.slug === slug || String(item.id) === slug);
+        const mapped = (items || []).find(
+          (item) =>
+            (item.slug === slug || String(item.id) === slug) &&
+            !isNonAnmolPackage(item.name, item.category),
+        );
         const mappedPrice = mapped ? Number(mapped.price) : NaN;
         setProduct(
           mapped
@@ -130,14 +143,16 @@ function ProductDetail() {
 
   const selectedPackage =
     productPackages.find((item) => item.id === selectedPackageId) || productPackages[0];
-  const unitPrice =
-    product?.name === "Anmol Ratan Juice"
-      ? ANMOL_RATAN_UNIT_PRICE
-      : product?.price == null
-        ? null
-        : Number(product.price);
-  const packageTotal = unitPrice === null ? null : selectedPackage.price * quantity;
-  const cartQuantity = selectedPackage.units * quantity;
+  const isPackageProduct = product?.name === "Anmol Ratan Juice";
+  const unitPrice = isPackageProduct
+    ? ANMOL_RATAN_UNIT_PRICE
+    : product?.price == null
+      ? null
+      : Number(product.price);
+  const packageTotal =
+    isPackageProduct && unitPrice !== null ? selectedPackage.price * quantity : null;
+  const cartQuantity = (isPackageProduct ? selectedPackage.units : 1) * quantity;
+  const maxQuantity = isPackageProduct ? Math.floor(99 / selectedPackage.units) : 99;
 
   async function addToCart(buyNow = false) {
     if (!product || typeof product.id !== "number") {
@@ -171,29 +186,37 @@ function ProductDetail() {
     }
   }
 
-  async function changeQuantity(delta: number) {
-    const currentProduct = productRef.current;
-    const nextQuantity = Math.min(99, Math.max(1, quantityRef.current + delta));
-    quantityRef.current = nextQuantity;
-    setQuantity(nextQuantity);
-    setAdded(false);
-    if (!currentProduct || typeof currentProduct.id !== "number" || !cartItemExistsRef.current)
-      return;
+  const changeQuantity = useCallback(
+    async (delta: number) => {
+      const currentProduct = productRef.current;
+      const nextQuantity = Math.min(maxQuantity, Math.max(1, quantityRef.current + delta));
+      const nextCartQuantity = (isPackageProduct ? selectedPackage.units : 1) * nextQuantity;
+      quantityRef.current = nextQuantity;
+      setQuantity(nextQuantity);
+      setAdded(false);
+      if (!currentProduct || typeof currentProduct.id !== "number" || !cartItemExistsRef.current)
+        return;
 
-    try {
-      const items = await updateCustomerCart(currentProduct.id, nextQuantity);
-      const cartItem = items.find((item) => Number(item.productId) === Number(currentProduct.id));
-      cartItemExistsRef.current = Boolean(cartItem);
-      setCartItemExists(Boolean(cartItem));
-      quantityRef.current = cartItem?.quantity ?? nextQuantity;
-      setQuantity(quantityRef.current);
-      broadcastCustomerCartChange(currentProduct.id, quantityRef.current);
-    } catch (reason) {
-      if ((reason as Error & { status?: number }).status !== 401) {
-        setError(reason instanceof Error ? reason.message : "Unable to update cart quantity.");
+      try {
+        const items = await updateCustomerCart(currentProduct.id, nextCartQuantity);
+        const cartItem = items.find((item) => Number(item.productId) === Number(currentProduct.id));
+        cartItemExistsRef.current = Boolean(cartItem);
+        setCartItemExists(Boolean(cartItem));
+        quantityRef.current = cartItem
+          ? isPackageProduct
+            ? Math.max(1, Math.round(cartItem.quantity / selectedPackage.units))
+            : cartItem.quantity
+          : nextQuantity;
+        setQuantity(quantityRef.current);
+        broadcastCustomerCartChange(currentProduct.id, cartItem?.quantity ?? nextCartQuantity);
+      } catch (reason) {
+        if ((reason as Error & { status?: number }).status !== 401) {
+          setError(reason instanceof Error ? reason.message : "Unable to update cart quantity.");
+        }
       }
-    }
-  }
+    },
+    [isPackageProduct, maxQuantity, selectedPackage.units],
+  );
 
   useEffect(() => {
     function handleQuantityAction(event: MouseEvent) {
@@ -205,7 +228,7 @@ function ProductDetail() {
       if (!action) return;
       event.preventDefault();
       const nextQuantity = Math.min(
-        99,
+        maxQuantity,
         Math.max(1, quantityRef.current + (action === "increase" ? 1 : -1)),
       );
       const valueElement =
@@ -219,7 +242,7 @@ function ProductDetail() {
 
     document.addEventListener("click", handleQuantityAction, true);
     return () => document.removeEventListener("click", handleQuantityAction, true);
-  }, []);
+  }, [changeQuantity, maxQuantity]);
 
   useEffect(() => {
     function syncFromAnotherTab(event: StorageEvent) {
@@ -230,7 +253,12 @@ function ProductDetail() {
           quantity?: number | null;
         };
         if (Number(change.productId) !== Number(product.id)) return;
-        const nextQuantity = change.quantity === null ? 1 : Math.max(1, change.quantity || 1);
+        const nextQuantity =
+          change.quantity === null
+            ? 1
+            : product?.name === "Anmol Ratan Juice"
+              ? Math.max(1, Math.round((change.quantity || 1) / selectedPackage.units))
+              : Math.max(1, change.quantity || 1);
         quantityRef.current = nextQuantity;
         cartItemExistsRef.current = change.quantity !== null;
         setQuantity(nextQuantity);
@@ -242,7 +270,7 @@ function ProductDetail() {
 
     window.addEventListener("storage", syncFromAnotherTab);
     return () => window.removeEventListener("storage", syncFromAnotherTab);
-  }, [product?.id]);
+  }, [product?.id, product?.name, selectedPackage.units]);
 
   if (loading) {
     return (
@@ -290,32 +318,34 @@ function ProductDetail() {
               <span className="pb-1 text-sm text-muted-foreground">per product</span>
             </div>
 
-            <div className="mt-7 rounded-2xl border border-primary/15 bg-primary/5 p-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-foreground">
-                  Product package
-                </span>
-                <select
-                  value={selectedPackageId}
-                  onChange={(event) => setSelectedPackageId(event.target.value)}
-                  className="field bg-card"
-                >
-                  {productPackages.map((packageOption) => (
-                    <option key={packageOption.id} value={packageOption.id}>
-                      {packageOption.label} — {money(packageOption.price)} ({packageOption.units}{" "}
-                      bottles)
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <PackageCheck className="h-4 w-4 text-secondary" /> {selectedPackage.units}{" "}
-                  bottles in this package
-                </span>
-                <span className="font-bold text-primary">{money(packageTotal)}</span>
+            {isPackageProduct && (
+              <div className="mt-7 rounded-2xl border border-primary/15 bg-primary/5 p-4">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-foreground">
+                    Product package
+                  </span>
+                  <select
+                    value={selectedPackageId}
+                    onChange={(event) => setSelectedPackageId(event.target.value)}
+                    className="field bg-card"
+                  >
+                    {productPackages.map((packageOption) => (
+                      <option key={packageOption.id} value={packageOption.id}>
+                        {packageOption.label} — {money(packageOption.price)} ({packageOption.units}{" "}
+                        bottles)
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <PackageCheck className="h-4 w-4 text-secondary" /> {selectedPackage.units}{" "}
+                    bottles in this package
+                  </span>
+                  <span className="font-bold text-primary">{money(packageTotal)}</span>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <div className="flex items-center rounded-full border border-border bg-surface">
@@ -337,7 +367,7 @@ function ProductDetail() {
                   {quantity}
                 </span>
                 <a
-                  href={`${window.location.pathname}?quantity=${Math.min(99, quantity + 1)}`}
+                  href={`${window.location.pathname}?quantity=${Math.min(maxQuantity, quantity + 1)}`}
                   data-quantity-action="increase"
                   className="cursor-pointer p-3 text-primary select-none"
                   aria-label="Increase quantity"

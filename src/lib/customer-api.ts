@@ -19,6 +19,16 @@ export type CustomerCartItem = {
   imageUrl?: string | null;
 };
 
+export function getCustomerCartLineTotal(
+  item: Pick<CustomerCartItem, "name" | "price" | "quantity">,
+) {
+  const quantity = Number(item.quantity);
+  if (item.name === "Anmol Ratan Juice" && quantity >= 5 && quantity % 5 === 0) {
+    return quantity * 700;
+  }
+  return Number(item.price || 0) * quantity;
+}
+
 export const customerCartSyncKey = "rdg-customer-cart-sync";
 
 export function broadcastCustomerCartChange(productId: number, quantity: number | null) {
@@ -152,6 +162,44 @@ export async function createCustomerOrder(payload: {
   paymentMethod?: "cash_on_delivery";
 }) {
   const data = await customerApi<{ order: CustomerOrderSummary }>("/api/customer/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return data.order;
+}
+
+export type CustomerPaymentOrder = {
+  keyId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  shippingFee: number;
+  total: number;
+};
+
+export async function createCustomerPaymentOrder() {
+  const data = await customerApi<CustomerPaymentOrder>("/api/customer/payments/order", {
+    method: "POST",
+  });
+  return data;
+}
+
+export async function verifyCustomerPayment(payload: {
+  shippingName: string;
+  shippingPhone: string;
+  shippingAddressLine1: string;
+  shippingAddressLine2?: string;
+  shippingCity: string;
+  shippingState: string;
+  shippingPostalCode: string;
+  shippingCountry?: string;
+  customerNote?: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}) {
+  const data = await customerApi<{ order: CustomerOrderSummary }>("/api/customer/payments/verify", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

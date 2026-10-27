@@ -35,4 +35,5 @@ dist-ssr
 .env
 .env.*
 !.env.example
+rzp-key*.csv
 public/uploads/

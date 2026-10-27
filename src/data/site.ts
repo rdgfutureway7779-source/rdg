@@ -97,6 +97,7 @@ const demoImageByCategory: Record<string, string> = {
   "TV, Appliances & Electronics": electronicsImage,
   "Men's Fashion": mensFashionImage,
   "Women's Fashion": fashionImage,
+  Footwear: fashionImage,
   "Toys, Baby Products & Kids' Fashion": familyImage,
   "Car, Motorbike & Industrial": electronicsImage,
   Books: mediaImage,
@@ -161,6 +162,18 @@ export const catalogDemoProducts: Product[] = [
     highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
     badge: "Trending demo",
     price: 1499,
+  },
+  {
+    id: "demo-footwear",
+    slug: "demo-footwear",
+    name: "Everyday Comfort Sneakers",
+    category: "Footwear",
+    subtitle: "Lightweight everyday sneakers designed for comfortable walking and active routines.",
+    description:
+      "A market-style demo listing for versatile everyday sneakers with cushioned support.",
+    highlights: ["Demo product", "₹1,999 sample price", "Category placeholder"],
+    badge: "Footwear demo",
+    price: 1999,
   },
   {
     id: "demo-toys-baby-kids",
@@ -287,30 +300,6 @@ export const catalogDemoProducts: Product[] = [
     highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
     badge: "Garden demo",
     price: 999,
-  },
-  {
-    id: "demo-business-packages",
-    slug: "demo-business-packages",
-    name: "Small Business Starter Kit",
-    category: "Business Packages",
-    subtitle: "Sample business materials, product guide and onboarding resources for new sellers.",
-    description: "A market-style demo listing for a direct-selling business onboarding package.",
-    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
-    badge: "Business demo",
-    price: 3499,
-  },
-  {
-    id: "demo-offers-bundles",
-    slug: "demo-offers-bundles",
-    name: "Family Wellness Value Bundle",
-    category: "Offers & Bundles",
-    subtitle:
-      "A multi-item family bundle combining everyday wellness and personal-care essentials.",
-    description:
-      "A market-style demo listing for a value bundle with a simple family shopping format.",
-    highlights: ["Demo product", "₹1,200 sample price", "Category placeholder"],
-    badge: "Value demo",
-    price: 2499,
   },
 ].map((product) => ({
   ...product,

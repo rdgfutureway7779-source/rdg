@@ -65,6 +65,14 @@ export async function migrate() {
     .map((statement) => statement.trim())
     .filter(Boolean);
   for (const statement of statements) await activePool.query(statement);
+  const [paymentReferenceColumn] = await activePool.query(
+    "SHOW COLUMNS FROM customer_orders LIKE 'payment_reference'",
+  );
+  if (!paymentReferenceColumn.length) {
+    await activePool.query(
+      "ALTER TABLE customer_orders ADD COLUMN payment_reference VARCHAR(100) NULL AFTER payment_method",
+    );
+  }
 }
 
 export async function closePool() {

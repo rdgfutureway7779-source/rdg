@@ -67,6 +67,9 @@ export async function registerDistributor(payload: {
   sponsorCode?: string;
   packageValue: number;
   password: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
 }) {
   const data = await distributorApi<{ distributor: Distributor }>(
     "/api/distributor/auth/register",
@@ -77,6 +80,23 @@ export async function registerDistributor(payload: {
     },
   );
   return data.distributor;
+}
+
+export type DistributorPaymentOrder = {
+  keyId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  packageValue: number;
+};
+
+export async function createDistributorPaymentOrder(packageValue: number) {
+  const data = await distributorApi<DistributorPaymentOrder>("/api/distributor/payments/order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ packageValue }),
+  });
+  return data;
 }
 
 export async function loginDistributor(username: string, password: string) {

@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS customer_orders (
   status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
   payment_status ENUM('pending', 'cod', 'paid', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
   payment_method VARCHAR(40) NOT NULL DEFAULT 'cash_on_delivery',
+  payment_reference VARCHAR(100) NULL,
   subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
   shipping_fee DECIMAL(12,2) NOT NULL DEFAULT 0,
   total DECIMAL(12,2) NOT NULL DEFAULT 0,

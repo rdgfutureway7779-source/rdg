@@ -1,8 +1,13 @@
 import { ArrowRight, LockKeyhole, UserPlus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { directReferralPlans } from "@/data/site";
-import { loginDistributor, registerDistributor } from "@/lib/distributor-api";
+import {
+  createDistributorPaymentOrder,
+  loginDistributor,
+  registerDistributor,
+} from "@/lib/distributor-api";
 import { isValidMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
+import { loadRazorpayCheckout, type RazorpayCheckoutResponse } from "@/lib/razorpay";
 
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
@@ -34,6 +39,7 @@ function DistributorAuth() {
     setError("");
     setNotice("");
     setLoading(true);
+    let paymentDialogOpened = false;
     try {
       if (mode === "register") {
         if (!isValidMobileNumber(phone)) {
@@ -41,27 +47,74 @@ function DistributorAuth() {
           setLoading(false);
           return;
         }
-        const distributor = await registerDistributor({
-          name,
-          username,
-          email,
-          phone,
-          city,
-          sponsorCode,
-          packageValue: Number(packageValue),
-          password,
+        if (!packageValue) {
+          setError("Select a product package before continuing.");
+          setLoading(false);
+          return;
+        }
+        const paymentOrder = await createDistributorPaymentOrder(Number(packageValue));
+        await loadRazorpayCheckout();
+        if (!window.Razorpay) throw new Error("Razorpay checkout is unavailable.");
+        const checkout = new window.Razorpay({
+          key: paymentOrder.keyId,
+          amount: paymentOrder.amount,
+          currency: paymentOrder.currency,
+          name: "RDG Future Way Pvt. Ltd.",
+          description: `RDG product package — ${money(Number(packageValue))}`,
+          order_id: paymentOrder.orderId,
+          prefill: { name, email, contact: phone },
+          notes: { package_value: String(packageValue) },
+          theme: { color: "#0b6b4b" },
+          handler: (response) => {
+            void completeRegistration(response);
+          },
+          modal: { ondismiss: () => setLoading(false) },
         });
-        setMode("login");
-        setPassword("");
-        setNotice(
-          `Package purchase request submitted for ${money(Number(packageValue))}. Your account will become active after RDG confirms the payment. Distributor ID: ${distributor.distributorCode}.`,
-        );
+        checkout.on("payment.failed", (response) => {
+          setError(
+            response.error?.description || "Payment failed. Your account was not activated.",
+          );
+          setLoading(false);
+        });
+        checkout.open();
+        paymentDialogOpened = true;
       } else {
         await loginDistributor(username, password);
         window.location.href = "/distributor/dashboard";
       }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to continue.");
+    } finally {
+      if (!paymentDialogOpened) setLoading(false);
+    }
+  }
+
+  async function completeRegistration(response: RazorpayCheckoutResponse) {
+    try {
+      const distributor = await registerDistributor({
+        name,
+        username,
+        email,
+        phone,
+        city,
+        sponsorCode,
+        packageValue: Number(packageValue),
+        password,
+        razorpayOrderId: response.razorpay_order_id,
+        razorpayPaymentId: response.razorpay_payment_id,
+        razorpaySignature: response.razorpay_signature,
+      });
+      setMode("login");
+      setPassword("");
+      setNotice(
+        `Payment received and verified. Distributor access is active for ${money(Number(packageValue))}. Distributor ID: ${distributor.distributorCode}. You can now log in.`,
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Payment was received but account activation could not be completed. Contact RDG support.",
+      );
     } finally {
       setLoading(false);
     }
@@ -201,7 +254,7 @@ function DistributorAuth() {
                     ))}
                   </select>
                   <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                    Your account remains pending until this package payment is confirmed by RDG.
+                    Your account activates automatically after Razorpay confirms the payment.
                   </span>
                 </label>
               </>
@@ -254,7 +307,13 @@ function DistributorAuth() {
               className="bg-brand mt-2 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               <UserPlus className="h-4 w-4" />
-              {loading ? "Please wait…" : mode === "register" ? "Create account" : "Login"}
+              {loading
+                ? mode === "register"
+                  ? "Opening Razorpay…"
+                  : "Please wait…"
+                : mode === "register"
+                  ? "Pay and create account"
+                  : "Login"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>

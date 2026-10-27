@@ -1,12 +1,27 @@
 import {
   ArrowRight,
+  Baby,
+  BookOpen,
+  Car,
   CheckCircle2,
+  Dumbbell,
   Filter,
+  Footprints,
+  Gem,
+  HeartPulse,
+  Home,
+  Leaf,
   LayoutGrid,
+  Music,
   Search,
+  Shirt,
   ShoppingCart,
   SlidersHorizontal,
+  Smartphone,
   Sparkles,
+  Sprout,
+  Tv,
+  type LucideIcon,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +39,7 @@ const categoryCatalog = [
   "TV, Appliances & Electronics",
   "Men's Fashion",
   "Women's Fashion",
+  "Footwear",
   "Toys, Baby Products & Kids' Fashion",
   "Car, Motorbike & Industrial",
   "Books",
@@ -35,19 +51,43 @@ const categoryCatalog = [
   "Beauty, Health & Grocery",
   "Sports, Fitness, Bags & Luggage",
   "Agriculture & Garden",
-  "Business Packages",
-  "Offers & Bundles",
 ];
+
+const categoryIcons: Record<string, LucideIcon> = {
+  "All categories": LayoutGrid,
+  "Mobiles & Computers": Smartphone,
+  "TV, Appliances & Electronics": Tv,
+  "Men's Fashion": Shirt,
+  "Women's Fashion": Shirt,
+  Footwear: Footprints,
+  "Toys, Baby Products & Kids' Fashion": Baby,
+  "Car, Motorbike & Industrial": Car,
+  Books: BookOpen,
+  "Movies, Music & Video Games": Music,
+  "Ayurvedic & Herbal": Leaf,
+  "Wellness & Nutrition": HeartPulse,
+  "Personal Care": Sparkles,
+  "Home, Kitchen & Pets": Home,
+  "Beauty, Health & Grocery": Gem,
+  "Sports, Fitness, Bags & Luggage": Dumbbell,
+  "Agriculture & Garden": Sprout,
+};
+
+const getCategoryIcon = (label: string) => categoryIcons[label] || LayoutGrid;
+
+const isProductPackage = (product: Product) => {
+  const searchable = `${product.name} ${product.category}`.toLowerCase();
+  return product.name !== "Anmol Ratan Juice" && /package|bundle/.test(searchable);
+};
 
 function Products() {
   const [activeCategory, setActiveCategory] = useState(() => {
     if (typeof window === "undefined") return "All categories";
     return new URLSearchParams(window.location.search).get("category") || "All categories";
   });
-  const [catalogProducts, setCatalogProducts] = useState<Product[]>([
-    ...products,
-    ...catalogDemoProducts,
-  ]);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>(
+    [...products, ...catalogDemoProducts].filter((item) => !isProductPackage(item)),
+  );
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("featured");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -75,19 +115,23 @@ function Products() {
           imageUrl: item.imageUrl,
         };
       });
-      const liveSlugs = new Set(liveProducts.map((item) => item.slug));
+      const filteredLiveProducts = liveProducts.filter((item) => !isProductPackage(item));
+      const liveSlugs = new Set(filteredLiveProducts.map((item) => item.slug));
       setCatalogProducts([
-        ...liveProducts,
-        ...catalogDemoProducts.filter((item) => !liveSlugs.has(item.slug)),
+        ...filteredLiveProducts,
+        ...catalogDemoProducts.filter(
+          (item) => !isProductPackage(item) && !liveSlugs.has(item.slug),
+        ),
       ]);
     });
   }, []);
 
   const categories = useMemo(
     () => [
-      { label: "All categories", count: catalogProducts.length },
+      { label: "All categories", count: catalogProducts.length, icon: LayoutGrid },
       ...categoryCatalog.map((label) => ({
         label,
+        icon: getCategoryIcon(label),
         count: catalogProducts.filter(
           (item) => item.category === label || item.category.includes(label),
         ).length,
@@ -96,6 +140,7 @@ function Products() {
         .filter((category) => !categoryCatalog.some((label) => category.includes(label)))
         .map((category) => ({
           label: category,
+          icon: getCategoryIcon(category),
           count: catalogProducts.filter((item) => item.category === category).length,
         })),
     ],
@@ -165,7 +210,10 @@ function Products() {
                   : "text-foreground hover:bg-accent hover:text-primary"
               }`}
             >
-              <span>{category.label}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                <category.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{category.label}</span>
+              </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-xs ${
                   activeCategory === category.label

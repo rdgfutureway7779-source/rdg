@@ -13,6 +13,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import { z } from "zod";
 import { closePool, migrate, query, transaction } from "./db.mjs";
+import { isCapturedRazorpayPayment, verifyRazorpayPaymentSignature } from "./razorpay-utils.mjs";
 import { seedDatabase } from "./seed.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,6 +22,8 @@ const frontendDist = path.resolve(__dirname, "../dist");
 const port = Number(process.env.PORT || 8787);
 const jwtSecret = process.env.JWT_SECRET;
 const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
 
 if (!jwtSecret || jwtSecret.length < 24)
   throw new Error("JWT_SECRET must be at least 24 characters.");
@@ -253,7 +256,21 @@ const customerLoginSchema = z.object({
   email: z.string().email().max(190),
   password: z.string().min(1).max(120),
 });
-const customerOrderSchema = z.object({
+const razorpayOrderIdSchema = z
+  .string()
+  .trim()
+  .regex(/^order_[A-Za-z0-9]+$/)
+  .max(40);
+const razorpayPaymentIdSchema = z
+  .string()
+  .trim()
+  .regex(/^pay_[A-Za-z0-9]+$/)
+  .max(40);
+const razorpaySignatureSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-f0-9]{64}$/i);
+const customerShippingSchema = z.object({
   shippingName: z.string().trim().min(2).max(160),
   shippingPhone: requiredMobileSchema,
   shippingAddressLine1: z.string().trim().min(5).max(255),
@@ -263,20 +280,16 @@ const customerOrderSchema = z.object({
   shippingPostalCode: z.string().trim().min(3).max(20),
   shippingCountry: z.string().trim().min(2).max(80).default("India"),
   customerNote: z.string().trim().max(1000).optional().nullable(),
+});
+const customerOrderSchema = customerShippingSchema.extend({
   paymentMethod: z.literal("cash_on_delivery").default("cash_on_delivery"),
 });
-const distributorRegisterSchema = z.object({
-  name: z.string().trim().min(2).max(160),
-  username: z
-    .string()
-    .trim()
-    .min(4)
-    .max(80)
-    .regex(/^[a-zA-Z0-9._-]+$/, "Use only letters, numbers, dot, underscore or hyphen."),
-  email: z.string().email().max(190),
-  phone: requiredMobileSchema,
-  city: z.string().trim().min(2).max(120),
-  sponsorCode: z.string().trim().max(80).optional().nullable(),
+const customerPaymentVerificationSchema = customerShippingSchema.extend({
+  razorpayOrderId: razorpayOrderIdSchema,
+  razorpayPaymentId: razorpayPaymentIdSchema,
+  razorpaySignature: razorpaySignatureSchema,
+});
+const distributorPackagePaymentOrderSchema = z.object({
   packageValue: z.coerce
     .number()
     .int()
@@ -284,8 +297,42 @@ const distributorRegisterSchema = z.object({
       (value) => distributorPackagePlans.some((item) => item.packageValue === value),
       "Select a valid distributor package.",
     ),
-  password: z.string().min(8).max(120),
 });
+const distributorRegisterSchema = z
+  .object({
+    name: z.string().trim().min(2).max(160),
+    username: z
+      .string()
+      .trim()
+      .min(4)
+      .max(80)
+      .regex(/^[a-zA-Z0-9._-]+$/, "Use only letters, numbers, dot, underscore or hyphen."),
+    email: z.string().email().max(190),
+    phone: requiredMobileSchema,
+    city: z.string().trim().min(2).max(120),
+    sponsorCode: z.string().trim().max(80).optional().nullable(),
+    packageValue: z.coerce
+      .number()
+      .int()
+      .refine(
+        (value) => distributorPackagePlans.some((item) => item.packageValue === value),
+        "Select a valid distributor package.",
+      ),
+    password: z.string().min(8).max(120),
+    razorpayOrderId: razorpayOrderIdSchema.optional().nullable(),
+    razorpayPaymentId: razorpayPaymentIdSchema.optional().nullable(),
+    razorpaySignature: razorpaySignatureSchema.optional().nullable(),
+  })
+  .superRefine((value, context) => {
+    const paymentFields = [value.razorpayOrderId, value.razorpayPaymentId, value.razorpaySignature];
+    if (paymentFields.some(Boolean) && !paymentFields.every(Boolean)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["razorpayPaymentId"],
+        message: "Complete Razorpay payment verification details.",
+      });
+    }
+  });
 const distributorLoginSchema = z.object({
   username: z.string().trim().min(1).max(80),
   password: z.string().min(1).max(120),
@@ -731,7 +778,12 @@ async function getCustomerCart(customerId) {
        p.price, p.image_url AS imageUrl
      FROM customer_cart_items c
      INNER JOIN products p ON p.id = c.product_id
-     WHERE c.customer_id = ? AND p.status = 'published'
+     WHERE c.customer_id = ?
+       AND p.status = 'published'
+       AND (
+         p.name = 'Anmol Ratan Juice'
+         OR CONCAT(COALESCE(p.name, ''), ' ', COALESCE(p.category, '')) NOT REGEXP 'package|bundle'
+       )
      ORDER BY c.updated_at DESC`,
     [customerId],
   );
@@ -741,6 +793,141 @@ async function getCustomerCart(customerId) {
       row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
     highlights: parseJson(row.highlights, []),
   }));
+}
+
+function customerCartTotals(cart) {
+  if (!cart.length) throw new Error("Your cart is empty.");
+  if (cart.some((item) => item.price === null || item.price === undefined)) {
+    throw new Error("Add prices to every product before placing an order.");
+  }
+  const subtotal = cart.reduce((sum, item) => sum + customerCartLineTotal(item), 0);
+  const shippingFee = subtotal >= 999 ? 0 : 99;
+  return { subtotal, shippingFee, total: subtotal + shippingFee };
+}
+
+function customerCartLineTotal(item) {
+  const quantity = Number(item.quantity);
+  if (item.name === "Anmol Ratan Juice" && quantity >= 5 && quantity % 5 === 0) {
+    return quantity * 700;
+  }
+  return Number(item.price || 0) * quantity;
+}
+
+function requireRazorpayConfig() {
+  if (!razorpayKeyId || !razorpayKeySecret) {
+    throw new Error("Online payments are not configured on the server.");
+  }
+}
+
+async function razorpayRequest(pathname, options = {}) {
+  requireRazorpayConfig();
+  const response = await fetch(`https://api.razorpay.com/v1/${pathname}`, {
+    ...options,
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${razorpayKeyId}:${razorpayKeySecret}`).toString("base64")}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error?.description || "Razorpay could not process the request.");
+  }
+  return payload;
+}
+
+async function verifyCapturedRazorpayPayment({ orderId, paymentId, signature, expectedAmount }) {
+  requireRazorpayConfig();
+  if (!verifyRazorpayPaymentSignature(orderId, paymentId, signature, razorpayKeySecret)) {
+    throw new Error("Payment verification failed.");
+  }
+
+  const razorpayOrder = await razorpayRequest(`orders/${encodeURIComponent(orderId)}`, {
+    method: "GET",
+  });
+  if (Number(razorpayOrder.amount) !== expectedAmount || razorpayOrder.currency !== "INR") {
+    throw new Error("The payment amount does not match the selected package.");
+  }
+
+  const payment = await razorpayRequest(`payments/${encodeURIComponent(paymentId)}`, {
+    method: "GET",
+  });
+  if (!isCapturedRazorpayPayment(razorpayOrder, payment, expectedAmount)) {
+    throw new Error("Payment is not captured yet. The account remains inactive.");
+  }
+  return payment;
+}
+
+async function createCustomerOrderRecord({
+  customerId,
+  cart,
+  shipping,
+  paymentStatus,
+  paymentMethod,
+  paymentReference = null,
+}) {
+  const { subtotal, shippingFee, total } = customerCartTotals(cart);
+  const orderNumber = `RDG-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+
+  const order = await transaction(async (connection) => {
+    const [orderResult] = await connection.execute(
+      `INSERT INTO customer_orders
+        (order_number, customer_id, status, payment_status, payment_method, payment_reference,
+         subtotal, shipping_fee, total, shipping_name, shipping_phone, shipping_address_line1,
+         shipping_address_line2, shipping_city, shipping_state, shipping_postal_code,
+         shipping_country, customer_note)
+       VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        orderNumber,
+        customerId,
+        paymentStatus,
+        paymentMethod,
+        paymentReference,
+        subtotal,
+        shippingFee,
+        total,
+        shipping.shippingName,
+        shipping.shippingPhone,
+        shipping.shippingAddressLine1,
+        shipping.shippingAddressLine2 || null,
+        shipping.shippingCity,
+        shipping.shippingState,
+        shipping.shippingPostalCode,
+        shipping.shippingCountry,
+        shipping.customerNote || null,
+      ],
+    );
+
+    for (const item of cart) {
+      const unitPrice = customerCartLineTotal(item) / Number(item.quantity);
+      await connection.execute(
+        `INSERT INTO customer_order_items
+          (order_id, product_id, product_name, product_slug, unit_price, quantity, line_total)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderResult.insertId,
+          item.productId,
+          item.name,
+          item.slug,
+          unitPrice,
+          item.quantity,
+          unitPrice * item.quantity,
+        ],
+      );
+    }
+    await connection.execute("DELETE FROM customer_cart_items WHERE customer_id = ?", [customerId]);
+    return { id: orderResult.insertId };
+  });
+
+  return {
+    id: order.id,
+    orderNumber,
+    status: "pending",
+    paymentStatus,
+    subtotal,
+    shippingFee,
+    total,
+  };
 }
 
 function formatOrder(order, items = []) {
@@ -829,6 +1016,40 @@ app.get(
 );
 
 app.post(
+  "/api/distributor/payments/order",
+  loginLimiter,
+  asyncRoute(async (req, res) => {
+    const input = distributorPackagePaymentOrderSchema.safeParse(req.body);
+    if (!input.success) return fail(res, "Select a valid distributor package.", 422);
+    try {
+      requireRazorpayConfig();
+      const paymentOrder = await razorpayRequest("orders", {
+        method: "POST",
+        body: JSON.stringify({
+          amount: input.data.packageValue * 100,
+          currency: "INR",
+          receipt: `rdg_dist_${Date.now()}`.slice(0, 40),
+          notes: { package_value: String(input.data.packageValue) },
+        }),
+      });
+      return ok(res, {
+        keyId: razorpayKeyId,
+        orderId: paymentOrder.id,
+        amount: Number(paymentOrder.amount),
+        currency: paymentOrder.currency,
+        packageValue: input.data.packageValue,
+      });
+    } catch (error) {
+      return fail(
+        res,
+        error instanceof Error ? error.message : "Unable to start package payment.",
+        503,
+      );
+    }
+  }),
+);
+
+app.post(
   "/api/distributor/auth/register",
   loginLimiter,
   asyncRoute(async (req, res) => {
@@ -842,6 +1063,12 @@ app.post(
 
     const email = input.data.email.toLowerCase();
     const username = input.data.username.toLowerCase();
+    const [[existingDistributor]] = await query(
+      "SELECT a.id FROM distributor_accounts a WHERE a.username = ? LIMIT 1",
+      [username],
+    );
+    if (existingDistributor)
+      return fail(res, "That username is already registered. Please choose another.", 409);
     const sponsorCode = await resolveSponsorCode(input.data.sponsorCode);
     if (input.data.sponsorCode && !sponsorCode)
       return fail(res, "Enter a valid active sponsor ID.", 422);
@@ -850,14 +1077,47 @@ app.post(
     );
     const passwordHash = await bcrypt.hash(input.data.password, 12);
     const distributorCode = await generateDistributorCode();
+    const hasOnlinePayment = Boolean(
+      input.data.razorpayOrderId && input.data.razorpayPaymentId && input.data.razorpaySignature,
+    );
+    const paymentReference = hasOnlinePayment
+      ? input.data.razorpayPaymentId
+      : `PACKAGE-${distributorCode}`;
+    const paymentMethod = hasOnlinePayment ? "razorpay" : "package_purchase_pending";
+    const paymentStatus = hasOnlinePayment ? "paid" : "pending";
+    const distributorStatus = hasOnlinePayment ? "active" : "inactive";
+    if (hasOnlinePayment) {
+      try {
+        await verifyCapturedRazorpayPayment({
+          orderId: input.data.razorpayOrderId,
+          paymentId: input.data.razorpayPaymentId,
+          signature: input.data.razorpaySignature,
+          expectedAmount: selectedPackage.packageValue * 100,
+        });
+      } catch (error) {
+        return fail(
+          res,
+          error instanceof Error ? error.message : "Payment verification failed.",
+          400,
+        );
+      }
+    }
 
     try {
       const distributor = await transaction(async (connection) => {
         const [distributorResult] = await connection.execute(
           `INSERT INTO distributors
              (distributor_code, name, email, phone, city, sponsor_code, status)
-           VALUES (?, ?, ?, ?, ?, ?, 'inactive')`,
-          [distributorCode, input.data.name, email, input.data.phone, input.data.city, sponsorCode],
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            distributorCode,
+            input.data.name,
+            email,
+            input.data.phone,
+            input.data.city,
+            sponsorCode,
+            distributorStatus,
+          ],
         );
         const [accountResult] = await connection.execute(
           `INSERT INTO distributor_accounts (distributor_id, username, password_hash)
@@ -866,21 +1126,33 @@ app.post(
         );
         await connection.execute(
           `INSERT INTO distributor_memberships
-             (distributor_id, amount, status, payment_status, payment_method, starts_at, expires_at)
-           VALUES (?, ?, 'pending', 'pending', 'package_purchase_pending', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR))`,
-          [distributorResult.insertId, distributorMembershipAmount],
+             (distributor_id, amount, status, payment_status, payment_method, transaction_reference,
+              starts_at, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR))`,
+          [
+            distributorResult.insertId,
+            distributorMembershipAmount,
+            hasOnlinePayment ? "active" : "pending",
+            paymentStatus,
+            paymentMethod,
+            paymentReference,
+          ],
         );
         await connection.execute(
           `INSERT INTO distributor_transactions
              (distributor_id, transaction_type, reference_no, id_count, package_value, amount,
               payment_method, payment_status, transaction_date, notes)
-           VALUES (?, 'id_purchase', ?, 1, ?, ?, 'package_purchase_pending', 'pending', CURDATE(), ?)`,
+           VALUES (?, 'id_purchase', ?, 1, ?, ?, ?, ?, CURDATE(), ?)`,
           [
             distributorResult.insertId,
-            `PACKAGE-${distributorCode}`,
+            paymentReference,
             selectedPackage.packageValue,
             selectedPackage.packageValue,
-            `Registration includes ${selectedPackage.packageCount} package(s). Awaiting payment confirmation.`,
+            paymentMethod,
+            paymentStatus,
+            hasOnlinePayment
+              ? `Registration includes ${selectedPackage.packageCount} package(s). Payment verified by Razorpay.`
+              : `Registration includes ${selectedPackage.packageCount} package(s). Awaiting payment confirmation.`,
           ],
         );
         return {
@@ -893,10 +1165,10 @@ app.post(
           phone: input.data.phone,
           city: input.data.city,
           sponsorCode,
-          status: "inactive",
+          status: distributorStatus,
           packageValue: selectedPackage.packageValue,
           packageCount: selectedPackage.packageCount,
-          packagePaymentStatus: "pending",
+          packagePaymentStatus: paymentStatus,
         };
       });
       const [[membership]] = await query(
@@ -913,7 +1185,7 @@ app.post(
         {
           distributor: distributorProfile({ ...distributor, ...membership }),
           package: selectedPackage,
-          packagePaymentStatus: "pending",
+          packagePaymentStatus: paymentStatus,
         },
         201,
       );
@@ -1045,7 +1317,15 @@ app.post(
       .safeParse(req.body);
     if (!input.success) return fail(res, "Select a valid product and quantity.", 422);
     const [[product]] = await query(
-      "SELECT id FROM products WHERE id = ? AND status = 'published' LIMIT 1",
+      `SELECT id
+       FROM products
+       WHERE id = ?
+         AND status = 'published'
+         AND (
+           name = 'Anmol Ratan Juice'
+           OR CONCAT(COALESCE(name, ''), ' ', COALESCE(category, '')) NOT REGEXP 'package|bundle'
+         )
+       LIMIT 1`,
       [input.data.productId],
     );
     if (!product) return fail(res, "Product is not available.", 404);
@@ -1110,76 +1390,83 @@ app.post(
     if (cart.some((item) => item.price === null || item.price === undefined)) {
       return fail(res, "Add prices to every product before placing an order.", 422);
     }
-
-    const subtotal = cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-    const shippingFee = subtotal >= 999 ? 0 : 99;
-    const total = subtotal + shippingFee;
-    const orderNumber = `RDG-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
-
-    const order = await transaction(async (connection) => {
-      const [orderResult] = await connection.execute(
-        `INSERT INTO customer_orders
-          (order_number, customer_id, status, payment_status, payment_method, subtotal, shipping_fee, total,
-           shipping_name, shipping_phone, shipping_address_line1, shipping_address_line2,
-           shipping_city, shipping_state, shipping_postal_code, shipping_country, customer_note)
-         VALUES (?, ?, 'pending', 'cod', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          orderNumber,
-          req.customer.id,
-          input.data.paymentMethod,
-          subtotal,
-          shippingFee,
-          total,
-          input.data.shippingName,
-          input.data.shippingPhone,
-          input.data.shippingAddressLine1,
-          input.data.shippingAddressLine2 || null,
-          input.data.shippingCity,
-          input.data.shippingState,
-          input.data.shippingPostalCode,
-          input.data.shippingCountry,
-          input.data.customerNote || null,
-        ],
-      );
-
-      for (const item of cart) {
-        const unitPrice = Number(item.price);
-        await connection.execute(
-          `INSERT INTO customer_order_items
-            (order_id, product_id, product_name, product_slug, unit_price, quantity, line_total)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            orderResult.insertId,
-            item.productId,
-            item.name,
-            item.slug,
-            unitPrice,
-            item.quantity,
-            unitPrice * item.quantity,
-          ],
-        );
-      }
-      await connection.execute("DELETE FROM customer_cart_items WHERE customer_id = ?", [
-        req.customer.id,
-      ]);
-      return { id: orderResult.insertId };
+    const order = await createCustomerOrderRecord({
+      customerId: req.customer.id,
+      cart,
+      shipping: input.data,
+      paymentStatus: "cod",
+      paymentMethod: input.data.paymentMethod,
     });
+    return ok(res, { order }, 201);
+  }),
+);
 
-    return ok(
-      res,
-      {
-        order: {
-          id: order.id,
-          orderNumber,
-          status: "pending",
-          paymentStatus: "cod",
-          subtotal,
-          shippingFee,
-          total,
-        },
-      },
-      201,
-    );
+app.post(
+  "/api/customer/payments/order",
+  requireCustomerAuth,
+  asyncRoute(async (req, res) => {
+    try {
+      requireRazorpayConfig();
+      const cart = await getCustomerCart(req.customer.id);
+      const { total, shippingFee } = customerCartTotals(cart);
+      const paymentOrder = await razorpayRequest("orders", {
+        method: "POST",
+        body: JSON.stringify({
+          amount: Math.round(total * 100),
+          currency: "INR",
+          receipt: `rdg_${req.customer.id}_${Date.now()}`.slice(0, 40),
+          notes: { customer_id: String(req.customer.id) },
+        }),
+      });
+      return ok(res, {
+        keyId: razorpayKeyId,
+        orderId: paymentOrder.id,
+        amount: Number(paymentOrder.amount),
+        currency: paymentOrder.currency,
+        shippingFee,
+        total,
+      });
+    } catch (error) {
+      return fail(
+        res,
+        error instanceof Error ? error.message : "Unable to start online payment.",
+        503,
+      );
+    }
+  }),
+);
+
+app.post(
+  "/api/customer/payments/verify",
+  requireCustomerAuth,
+  asyncRoute(async (req, res) => {
+    const input = customerPaymentVerificationSchema.safeParse(req.body);
+    if (!input.success) return fail(res, "Complete all required shipping details.", 422);
+
+    try {
+      requireRazorpayConfig();
+      const cart = await getCustomerCart(req.customer.id);
+      const totals = customerCartTotals(cart);
+      const expectedAmount = Math.round(totals.total * 100);
+      await verifyCapturedRazorpayPayment({
+        orderId: input.data.razorpayOrderId,
+        paymentId: input.data.razorpayPaymentId,
+        signature: input.data.razorpaySignature,
+        expectedAmount,
+      });
+
+      const order = await createCustomerOrderRecord({
+        customerId: req.customer.id,
+        cart,
+        shipping: input.data,
+        paymentStatus: "paid",
+        paymentMethod: "razorpay",
+        paymentReference: input.data.razorpayPaymentId,
+      });
+      return ok(res, { order }, 201);
+    } catch (error) {
+      return fail(res, error instanceof Error ? error.message : "Unable to verify payment.", 400);
+    }
   }),
 );
 
