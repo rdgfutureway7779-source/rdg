@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
-import { catalogDemoProducts, products } from "@/data/site";
+import { catalogDemoProducts, getCatalogImageForCategory, products } from "@/data/site";
 import { getPublicProducts, type PublicProduct } from "@/lib/cms";
 import {
   addToCustomerCart,
@@ -121,6 +121,7 @@ function ProductDetail() {
                       ? ANMOL_RATAN_UNIT_PRICE
                       : null,
                 badge: mapped.name === "Anmol Ratan Juice" ? "Signature Product" : "RDG Product",
+                imageUrl: mapped.imageUrl || getCatalogImageForCategory(mapped.category),
               }
             : fallback
               ? {
@@ -132,7 +133,7 @@ function ProductDetail() {
                       : fallback.name === "Anmol Ratan Juice"
                         ? ANMOL_RATAN_UNIT_PRICE
                         : null,
-                  imageUrl: null,
+                  imageUrl: getCatalogImageForCategory(fallback.category),
                   id: fallback.id,
                 }
               : null,

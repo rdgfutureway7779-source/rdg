@@ -26,7 +26,12 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
-import { catalogDemoProducts, products, type Product } from "@/data/site";
+import {
+  catalogDemoProducts,
+  getCatalogImageForCategory,
+  products,
+  type Product,
+} from "@/data/site";
 import { getPublicProducts } from "@/lib/cms";
 
 const money = (value: number | null | undefined) =>
@@ -112,7 +117,7 @@ function Products() {
               : item.name === "Anmol Ratan Juice"
                 ? 1200
                 : null,
-          imageUrl: item.imageUrl,
+          imageUrl: item.imageUrl || getCatalogImageForCategory(item.category),
         };
       });
       const filteredLiveProducts = liveProducts.filter((item) => !isProductPackage(item));
@@ -211,8 +216,16 @@ function Products() {
               }`}
             >
               <span className="flex min-w-0 items-center gap-2">
-                <category.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{category.label}</span>
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                    activeCategory === category.label
+                      ? "bg-white/15 text-primary-foreground"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  <category.icon className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
+                </span>
+                <span className="min-w-0">{category.label}</span>
               </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-xs ${

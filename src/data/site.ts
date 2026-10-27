@@ -1,12 +1,19 @@
-import agricultureImage from "@/assets/catalog/agriculture.png";
-import businessImage from "@/assets/catalog/business.png";
-import electronicsImage from "@/assets/catalog/electronics.png";
-import familyImage from "@/assets/catalog/family.png";
-import fashionImage from "@/assets/catalog/fashion.png";
-import fitnessImage from "@/assets/catalog/fitness.png";
-import homeBeautyImage from "@/assets/catalog/home-beauty.png";
-import mediaImage from "@/assets/catalog/media.png";
-import mensFashionImage from "@/assets/catalog/mens-fashion.png";
+import agricultureGardenImage from "@/assets/catalog/categories/agriculture-garden.jpg";
+import ayurvedicHerbalImage from "@/assets/catalog/categories/ayurvedic-herbal.jpg";
+import beautyHealthGroceryImage from "@/assets/catalog/categories/beauty-health-grocery.jpg";
+import booksImage from "@/assets/catalog/categories/books.jpg";
+import carIndustrialImage from "@/assets/catalog/categories/car-industrial.jpg";
+import footwearImage from "@/assets/catalog/categories/footwear.jpg";
+import homeKitchenPetsImage from "@/assets/catalog/categories/home-kitchen-pets.jpg";
+import menFashionImage from "@/assets/catalog/categories/mens-fashion.jpg";
+import mobilesComputersImage from "@/assets/catalog/categories/mobiles-computers.jpg";
+import moviesMusicImage from "@/assets/catalog/categories/movies-music.jpg";
+import personalCareImage from "@/assets/catalog/categories/personal-care.jpg";
+import sportsFitnessImage from "@/assets/catalog/categories/sports-fitness.jpg";
+import toysKidsImage from "@/assets/catalog/categories/toys-kids.jpg";
+import tvElectronicsImage from "@/assets/catalog/categories/tv-electronics.jpg";
+import wellnessNutritionImage from "@/assets/catalog/categories/wellness-nutrition.jpg";
+import womensFashionImage from "@/assets/catalog/categories/womens-fashion.jpg";
 
 export const company = {
   name: "RDG Future Way Pvt. Ltd.",
@@ -92,26 +99,29 @@ export type Product = {
   imageUrl?: string | null;
 };
 
-const demoImageByCategory: Record<string, string> = {
-  "Mobiles & Computers": electronicsImage,
-  "TV, Appliances & Electronics": electronicsImage,
-  "Men's Fashion": mensFashionImage,
-  "Women's Fashion": fashionImage,
-  Footwear: fashionImage,
-  "Toys, Baby Products & Kids' Fashion": familyImage,
-  "Car, Motorbike & Industrial": electronicsImage,
-  Books: mediaImage,
-  "Movies, Music & Video Games": mediaImage,
-  "Ayurvedic & Herbal": homeBeautyImage,
-  "Wellness & Nutrition": homeBeautyImage,
-  "Personal Care": homeBeautyImage,
-  "Home, Kitchen & Pets": homeBeautyImage,
-  "Beauty, Health & Grocery": homeBeautyImage,
-  "Sports, Fitness, Bags & Luggage": fitnessImage,
-  "Agriculture & Garden": agricultureImage,
-  "Business Packages": businessImage,
-  "Offers & Bundles": businessImage,
+export const catalogImageByCategory: Record<string, string> = {
+  "Mobiles & Computers": mobilesComputersImage,
+  "TV, Appliances & Electronics": tvElectronicsImage,
+  "Men's Fashion": menFashionImage,
+  "Women's Fashion": womensFashionImage,
+  Footwear: footwearImage,
+  "Toys, Baby Products & Kids' Fashion": toysKidsImage,
+  "Car, Motorbike & Industrial": carIndustrialImage,
+  Books: booksImage,
+  "Movies, Music & Video Games": moviesMusicImage,
+  "Ayurvedic & Herbal": ayurvedicHerbalImage,
+  "Wellness & Nutrition": wellnessNutritionImage,
+  "Personal Care": personalCareImage,
+  "Home, Kitchen & Pets": homeKitchenPetsImage,
+  "Beauty, Health & Grocery": beautyHealthGroceryImage,
+  "Sports, Fitness, Bags & Luggage": sportsFitnessImage,
+  "Agriculture & Garden": agricultureGardenImage,
 };
+
+export function getCatalogImageForCategory(category?: string | null) {
+  if (!category) return null;
+  return catalogImageByCategory[category.trim()] || null;
+}
 
 export const catalogDemoProducts: Product[] = [
   {
@@ -303,7 +313,7 @@ export const catalogDemoProducts: Product[] = [
   },
 ].map((product) => ({
   ...product,
-  imageUrl: demoImageByCategory[product.category],
+  imageUrl: getCatalogImageForCategory(product.category),
 }));
 
 export const products: Product[] = [
