@@ -26,6 +26,7 @@ import opportunityImage from "@/assets/opportunity-network-v2.png";
 import {
   bonuses,
   events,
+  getCatalogImageForCategory,
   journey,
   posts,
   products,
@@ -78,7 +79,7 @@ export function FeaturedProducts() {
                   : item.name === "Anmol Ratan Juice"
                     ? 1200
                     : null,
-              imageUrl: item.imageUrl,
+              imageUrl: item.imageUrl || getCatalogImageForCategory(item.category),
             };
           }),
         );
