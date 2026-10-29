@@ -339,14 +339,11 @@ function Products() {
 
   return (
     <section className="bg-[#fafbf7] py-8 sm:py-12">
-      <div className="container-x">
+      <div className="container-x products-page-container">
         <div className="rounded-2xl border border-primary/10 bg-[linear-gradient(120deg,#f1f8ec_0%,#fffdf5_52%,#eef7f9_100%)] px-6 py-8 shadow-soft sm:px-10 sm:py-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-primary uppercase">
-                <Sparkles className="h-4 w-4" /> RDG product catalogue
-              </div>
-              <h1 className="mt-3 font-display text-4xl leading-tight font-bold text-primary-dark sm:text-5xl">
+              <h1 className="font-display text-4xl leading-tight font-bold text-primary-dark sm:text-5xl">
                 Find exactly what you need.
               </h1>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
