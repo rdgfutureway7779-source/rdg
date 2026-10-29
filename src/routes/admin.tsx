@@ -935,6 +935,8 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
     highlightsText: "",
     price: "",
     dpPrice: "",
+    stockQuantity: "",
+    isServiceable: true,
     imageUrl: "",
     status: "draft",
     sortOrder: 0,
@@ -954,7 +956,15 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
   }, []);
   function open(item?: RecordItem) {
     setEditing(item || {});
-    setForm(item ? { ...item, highlightsText: (item.highlights || []).join("\n") } : blank);
+    setForm(
+      item
+        ? {
+            ...item,
+            highlightsText: (item.highlights || []).join("\n"),
+            isServiceable: item.isServiceable === undefined ? true : Boolean(item.isServiceable),
+          }
+        : blank,
+    );
   }
   function openCategory(item?: RecordItem) {
     setCategoryEditing(item || {});
@@ -974,6 +984,8 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
           ...form,
           price: form.price === "" ? null : Number(form.price),
           dpPrice: form.dpPrice === "" ? null : Number(form.dpPrice),
+          stockQuantity: form.stockQuantity === "" ? null : Number(form.stockQuantity),
+          isServiceable: Boolean(form.isServiceable),
           highlights: String(form.highlightsText || "")
             .split("\n")
             .map((v) => v.trim())
@@ -1157,7 +1169,7 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
               onChange={(value) => setForm({ ...form, category: value })}
             />
             <TextField
-              label="Price"
+              label="MRP"
               type="number"
               value={form.price}
               onChange={(value) => setForm({ ...form, price: value })}
@@ -1167,6 +1179,17 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
               type="number"
               value={form.dpPrice}
               onChange={(value) => setForm({ ...form, dpPrice: value })}
+            />
+            <TextField
+              label="Stock quantity"
+              type="number"
+              value={form.stockQuantity}
+              onChange={(value) => setForm({ ...form, stockQuantity: value })}
+            />
+            <CheckboxField
+              label="Serviceable for customer delivery"
+              checked={form.isServiceable !== false}
+              onChange={(checked) => setForm({ ...form, isServiceable: checked })}
             />
             <TextField
               label="Subtitle"
@@ -1206,7 +1229,7 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
           </form>
         </Editor>
       )}
-      <DataTable headers={["Product", "Category", "MRP / DP", "Status", "Actions"]}>
+      <DataTable headers={["Product", "Category", "MRP / DP", "Availability", "Status", "Actions"]}>
         {items.map((item) => (
           <tr key={item.id} className="border-t border-border">
             <td className="px-4 py-4">
@@ -1218,6 +1241,18 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
               <div>MRP: {item.price ? `₹${Number(item.price).toLocaleString("en-IN")}` : "—"}</div>
               <div className="text-xs text-muted-foreground">
                 DP: {item.dpPrice ? `₹${Number(item.dpPrice).toLocaleString("en-IN")}` : "—"}
+              </div>
+            </td>
+            <td className="px-4 py-4 text-sm">
+              <div>
+                {item.stockQuantity === null || item.stockQuantity === undefined
+                  ? "Stock not tracked"
+                  : `${item.stockQuantity} available`}
+              </div>
+              <div
+                className={`text-xs ${item.isServiceable === false ? "text-destructive" : "text-secondary"}`}
+              >
+                {item.isServiceable === false ? "Not serviceable" : "Serviceable"}
               </div>
             </td>
             <td className="px-4 py-4">
@@ -3247,6 +3282,27 @@ function SelectField({
           </option>
         ))}
       </select>
+    </label>
+  );
+}
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm font-semibold">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="h-4 w-4 accent-primary"
+      />
+      {label}
     </label>
   );
 }

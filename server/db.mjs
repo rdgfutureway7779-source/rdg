@@ -89,6 +89,22 @@ export async function migrate() {
       "ALTER TABLE products ADD COLUMN dp_price DECIMAL(12,2) NULL AFTER price",
     );
   }
+  const [productStockColumn] = await activePool.query(
+    "SHOW COLUMNS FROM products LIKE 'stock_quantity'",
+  );
+  if (!productStockColumn.length) {
+    await activePool.query(
+      "ALTER TABLE products ADD COLUMN stock_quantity INT NULL AFTER dp_price",
+    );
+  }
+  const [productServiceableColumn] = await activePool.query(
+    "SHOW COLUMNS FROM products LIKE 'is_serviceable'",
+  );
+  if (!productServiceableColumn.length) {
+    await activePool.query(
+      "ALTER TABLE products ADD COLUMN is_serviceable TINYINT(1) NOT NULL DEFAULT 1 AFTER stock_quantity",
+    );
+  }
 }
 
 export async function closePool() {

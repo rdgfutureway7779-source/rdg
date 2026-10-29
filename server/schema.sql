@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS products (
   highlights JSON NULL,
   price DECIMAL(12,2) NULL,
   dp_price DECIMAL(12,2) NULL,
+  stock_quantity INT NULL,
+  is_serviceable TINYINT(1) NOT NULL DEFAULT 1,
   image_url VARCHAR(500) NULL,
   status ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
   sort_order INT NOT NULL DEFAULT 0,

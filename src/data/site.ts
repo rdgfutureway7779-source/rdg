@@ -97,6 +97,8 @@ export type Product = {
   badge?: string;
   price?: number | null;
   dpPrice?: number | null;
+  stockQuantity?: number | null;
+  isServiceable?: boolean;
   imageUrl?: string | null;
 };
 

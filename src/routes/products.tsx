@@ -181,6 +181,11 @@ function Products() {
                 : null,
           dpPrice:
             item.dpPrice === null || item.dpPrice === undefined ? null : Number(item.dpPrice),
+          stockQuantity:
+            item.stockQuantity === null || item.stockQuantity === undefined
+              ? null
+              : Number(item.stockQuantity),
+          isServiceable: item.isServiceable !== false,
           imageUrl: item.imageUrl || getCatalogImageForCategory(item.category),
         };
       });
@@ -558,6 +563,17 @@ function Products() {
                         <p className="mt-0.5 text-xl font-bold text-primary">{money(item.price)}</p>
                         <p className="mt-1 text-[11px] text-muted-foreground">
                           Inclusive of all taxes
+                        </p>
+                        <p
+                          className={`mt-2 text-[11px] font-semibold ${item.isServiceable === false ? "text-destructive" : "text-secondary"}`}
+                        >
+                          {item.isServiceable === false
+                            ? "Not serviceable"
+                            : item.stockQuantity == null
+                              ? "Availability confirmed at checkout"
+                              : item.stockQuantity > 0
+                                ? `${item.stockQuantity} in stock`
+                                : "Out of stock"}
                         </p>
                       </div>
                       <div className="mt-4 flex items-center justify-between gap-3">

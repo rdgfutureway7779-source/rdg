@@ -161,6 +161,11 @@ function ProductDetail() {
   const cartQuantity = (isPackageProduct ? selectedPackage.units : 1) * quantity;
   const maxQuantity = isPackageProduct ? Math.floor(99 / selectedPackage.units) : 99;
   const dpPrice = product?.dpPrice == null ? null : Number(product.dpPrice);
+  const isOutOfStock =
+    product?.stockQuantity !== null &&
+    product?.stockQuantity !== undefined &&
+    Number(product.stockQuantity) <= 0;
+  const isUnavailable = Boolean(product && (product.isServiceable === false || isOutOfStock));
   const productCode = `RDG-${String(product?.id || "PRODUCT").toUpperCase()}`;
 
   function checkDelivery() {
@@ -174,6 +179,14 @@ function ProductDetail() {
   async function addToCart(buyNow = false) {
     if (!product || typeof product.id !== "number") {
       setError("This product is not available for online ordering yet.");
+      return;
+    }
+    if (isUnavailable) {
+      setError(
+        isOutOfStock
+          ? "This product is currently out of stock."
+          : "This product is not serviceable to your area.",
+      );
       return;
     }
     try {
@@ -369,6 +382,17 @@ function ProductDetail() {
                 </div>
               </div>
               <p className="mt-3 text-xs font-medium text-secondary">Inclusive of all taxes</p>
+              <p
+                className={`mt-3 text-xs font-semibold ${isUnavailable ? "text-destructive" : "text-secondary"}`}
+              >
+                {isOutOfStock
+                  ? "Out of stock"
+                  : product.isServiceable === false
+                    ? "Not serviceable"
+                    : product.stockQuantity == null
+                      ? "Availability confirmed at checkout"
+                      : `${product.stockQuantity} in stock`}
+              </p>
               {isPackageProduct && (
                 <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-[#fafbf7] px-3 py-2 text-xs">
                   <span className="text-muted-foreground">Selected package total</span>
@@ -449,7 +473,7 @@ function ProductDetail() {
                 <button
                   type="button"
                   onClick={() => void addToCart(true)}
-                  disabled={adding}
+                  disabled={adding || isUnavailable}
                   className="bg-brand inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-primary-foreground shadow-card disabled:opacity-60 sm:flex-none"
                 >
                   <Zap className="h-4 w-4" /> {adding ? "Processing…" : "Buy now"}
@@ -457,7 +481,7 @@ function ProductDetail() {
                 <button
                   type="button"
                   onClick={() => void addToCart()}
-                  disabled={adding}
+                  disabled={adding || isUnavailable}
                   className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-lg border border-primary/25 bg-white px-5 py-3 text-sm font-semibold text-primary shadow-soft disabled:opacity-60 sm:flex-none"
                 >
                   <ShoppingCart className="h-4 w-4" /> {adding ? "Adding…" : "Add to cart"}

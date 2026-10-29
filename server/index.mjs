@@ -407,6 +407,8 @@ const productSchema = z.object({
   highlights: z.array(z.string().max(255)).default([]),
   price: z.coerce.number().min(0).optional().nullable(),
   dpPrice: z.coerce.number().min(0).optional().nullable(),
+  stockQuantity: z.coerce.number().int().min(0).optional().nullable(),
+  isServiceable: z.boolean().default(true),
   imageUrl: z.string().max(500).optional().nullable(),
   status: z.enum(["draft", "published"]),
   sortOrder: z.coerce.number().int().min(0).default(0),
@@ -805,7 +807,8 @@ async function getCustomerCart(customerId) {
   const [rows] = await query(
     `SELECT c.id AS cartItemId, c.product_id AS productId, c.quantity,
        p.name, p.slug, p.category, p.subtitle, p.description, p.highlights,
-       p.price, p.image_url AS imageUrl
+       p.price, p.stock_quantity AS stockQuantity, p.is_serviceable AS isServiceable,
+       p.image_url AS imageUrl
      FROM customer_cart_items c
      INNER JOIN products p ON p.id = c.product_id
      WHERE c.customer_id = ?
@@ -821,12 +824,20 @@ async function getCustomerCart(customerId) {
     ...row,
     price:
       row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
+    stockQuantity: row.stockQuantity === null ? null : Number(row.stockQuantity),
+    isServiceable: Boolean(row.isServiceable),
     highlights: parseJson(row.highlights, []),
   }));
 }
 
 function customerCartTotals(cart) {
   if (!cart.length) throw new Error("Your cart is empty.");
+  if (cart.some((item) => item.isServiceable === false)) {
+    throw new Error("One or more products are not currently serviceable.");
+  }
+  if (cart.some((item) => item.stockQuantity !== null && item.quantity > item.stockQuantity)) {
+    throw new Error("One or more products exceed the available stock.");
+  }
   if (cart.some((item) => item.price === null || item.price === undefined)) {
     throw new Error("Add prices to every product before placing an order.");
   }
@@ -1347,7 +1358,7 @@ app.post(
       .safeParse(req.body);
     if (!input.success) return fail(res, "Select a valid product and quantity.", 422);
     const [[product]] = await query(
-      `SELECT id
+      `SELECT id, stock_quantity AS stockQuantity, is_serviceable AS isServiceable
        FROM products
        WHERE id = ?
          AND status = 'published'
@@ -1359,6 +1370,10 @@ app.post(
       [input.data.productId],
     );
     if (!product) return fail(res, "Product is not available.", 404);
+    if (!product.isServiceable) return fail(res, "Product is not serviceable.", 409);
+    if (product.stockQuantity !== null && input.data.quantity > Number(product.stockQuantity)) {
+      return fail(res, "Requested quantity is not available in stock.", 409);
+    }
     const [[existing]] = await query(
       "SELECT id FROM customer_cart_items WHERE customer_id = ? AND product_id = ? LIMIT 1",
       [req.customer.id, input.data.productId],
@@ -1387,6 +1402,14 @@ app.patch(
       .object({ quantity: z.coerce.number().int().min(1).max(99) })
       .safeParse(req.body);
     if (!input.success) return fail(res, "Quantity must be between 1 and 99.", 422);
+    const [[product]] = await query(
+      "SELECT stock_quantity AS stockQuantity, is_serviceable AS isServiceable FROM products WHERE id = ? AND status = 'published' LIMIT 1",
+      [productId],
+    );
+    if (!product || !product.isServiceable) return fail(res, "Product is not serviceable.", 409);
+    if (product.stockQuantity !== null && input.data.quantity > Number(product.stockQuantity)) {
+      return fail(res, "Requested quantity is not available in stock.", 409);
+    }
     const [result] = await query(
       "UPDATE customer_cart_items SET quantity = ? WHERE customer_id = ? AND product_id = ?",
       [input.data.quantity, req.customer.id, productId],
@@ -2426,7 +2449,7 @@ app.get(
   requireAuth,
   asyncRoute(async (_req, res) => {
     const [rows] = await query(
-      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, image_url AS imageUrl, status, sort_order AS sortOrder, updated_at AS updatedAt FROM products ORDER BY sort_order ASC, updated_at DESC",
+      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, stock_quantity AS stockQuantity, is_serviceable AS isServiceable, image_url AS imageUrl, status, sort_order AS sortOrder, updated_at AS updatedAt FROM products ORDER BY sort_order ASC, updated_at DESC",
     );
     return ok(
       res,
@@ -2435,6 +2458,8 @@ app.get(
         price:
           row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
         dpPrice: row.dpPrice === null ? null : Number(row.dpPrice),
+        stockQuantity: row.stockQuantity === null ? null : Number(row.stockQuantity),
+        isServiceable: Boolean(row.isServiceable),
         highlights: parseJson(row.highlights, []),
       })),
     );
@@ -2450,7 +2475,7 @@ app.post(
     if (!input) return;
     try {
       const [result] = await query(
-        "INSERT INTO products (name, slug, category, subtitle, description, highlights, price, dp_price, image_url, status, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO products (name, slug, category, subtitle, description, highlights, price, dp_price, stock_quantity, is_serviceable, image_url, status, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
           input.name,
           input.slug,
@@ -2460,6 +2485,8 @@ app.post(
           JSON.stringify(input.highlights),
           input.price ?? null,
           input.dpPrice ?? null,
+          input.stockQuantity ?? null,
+          input.isServiceable ? 1 : 0,
           input.imageUrl || null,
           input.status,
           input.sortOrder,
@@ -2484,7 +2511,7 @@ app.put(
     if (!input) return;
     try {
       const [result] = await query(
-        "UPDATE products SET name = ?, slug = ?, category = ?, subtitle = ?, description = ?, highlights = ?, price = ?, dp_price = ?, image_url = ?, status = ?, sort_order = ? WHERE id = ?",
+        "UPDATE products SET name = ?, slug = ?, category = ?, subtitle = ?, description = ?, highlights = ?, price = ?, dp_price = ?, stock_quantity = ?, is_serviceable = ?, image_url = ?, status = ?, sort_order = ? WHERE id = ?",
         [
           input.name,
           input.slug,
@@ -2494,6 +2521,8 @@ app.put(
           JSON.stringify(input.highlights),
           input.price ?? null,
           input.dpPrice ?? null,
+          input.stockQuantity ?? null,
+          input.isServiceable ? 1 : 0,
           input.imageUrl || null,
           input.status,
           input.sortOrder,
@@ -3281,7 +3310,7 @@ app.get(
   "/api/public/products",
   asyncRoute(async (_req, res) => {
     const [rows] = await query(
-      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, image_url AS imageUrl FROM products WHERE status = 'published' ORDER BY sort_order ASC, updated_at DESC",
+      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, stock_quantity AS stockQuantity, is_serviceable AS isServiceable, image_url AS imageUrl FROM products WHERE status = 'published' ORDER BY sort_order ASC, updated_at DESC",
     );
     return ok(
       res,
@@ -3290,6 +3319,8 @@ app.get(
         price:
           row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
         dpPrice: row.dpPrice === null ? null : Number(row.dpPrice),
+        stockQuantity: row.stockQuantity === null ? null : Number(row.stockQuantity),
+        isServiceable: Boolean(row.isServiceable),
         highlights: parseJson(row.highlights, []),
       })),
     );

@@ -44,6 +44,8 @@ export type PublicProduct = {
   highlights: string[];
   price?: number | null;
   dpPrice?: number | null;
+  stockQuantity?: number | null;
+  isServiceable?: boolean;
   imageUrl?: string | null;
 };
 
