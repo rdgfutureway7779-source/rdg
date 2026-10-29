@@ -406,6 +406,7 @@ const productSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
   highlights: z.array(z.string().max(255)).default([]),
   price: z.coerce.number().min(0).optional().nullable(),
+  dpPrice: z.coerce.number().min(0).optional().nullable(),
   imageUrl: z.string().max(500).optional().nullable(),
   status: z.enum(["draft", "published"]),
   sortOrder: z.coerce.number().int().min(0).default(0),
@@ -2425,7 +2426,7 @@ app.get(
   requireAuth,
   asyncRoute(async (_req, res) => {
     const [rows] = await query(
-      "SELECT id, name, slug, category, subtitle, description, highlights, price, image_url AS imageUrl, status, sort_order AS sortOrder, updated_at AS updatedAt FROM products ORDER BY sort_order ASC, updated_at DESC",
+      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, image_url AS imageUrl, status, sort_order AS sortOrder, updated_at AS updatedAt FROM products ORDER BY sort_order ASC, updated_at DESC",
     );
     return ok(
       res,
@@ -2433,6 +2434,7 @@ app.get(
         ...row,
         price:
           row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
+        dpPrice: row.dpPrice === null ? null : Number(row.dpPrice),
         highlights: parseJson(row.highlights, []),
       })),
     );
@@ -2448,7 +2450,7 @@ app.post(
     if (!input) return;
     try {
       const [result] = await query(
-        "INSERT INTO products (name, slug, category, subtitle, description, highlights, price, image_url, status, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO products (name, slug, category, subtitle, description, highlights, price, dp_price, image_url, status, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
           input.name,
           input.slug,
@@ -2457,6 +2459,7 @@ app.post(
           input.description || null,
           JSON.stringify(input.highlights),
           input.price ?? null,
+          input.dpPrice ?? null,
           input.imageUrl || null,
           input.status,
           input.sortOrder,
@@ -2481,7 +2484,7 @@ app.put(
     if (!input) return;
     try {
       const [result] = await query(
-        "UPDATE products SET name = ?, slug = ?, category = ?, subtitle = ?, description = ?, highlights = ?, price = ?, image_url = ?, status = ?, sort_order = ? WHERE id = ?",
+        "UPDATE products SET name = ?, slug = ?, category = ?, subtitle = ?, description = ?, highlights = ?, price = ?, dp_price = ?, image_url = ?, status = ?, sort_order = ? WHERE id = ?",
         [
           input.name,
           input.slug,
@@ -2490,6 +2493,7 @@ app.put(
           input.description || null,
           JSON.stringify(input.highlights),
           input.price ?? null,
+          input.dpPrice ?? null,
           input.imageUrl || null,
           input.status,
           input.sortOrder,
@@ -3277,7 +3281,7 @@ app.get(
   "/api/public/products",
   asyncRoute(async (_req, res) => {
     const [rows] = await query(
-      "SELECT id, name, slug, category, subtitle, description, highlights, price, image_url AS imageUrl FROM products WHERE status = 'published' ORDER BY sort_order ASC, updated_at DESC",
+      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, image_url AS imageUrl FROM products WHERE status = 'published' ORDER BY sort_order ASC, updated_at DESC",
     );
     return ok(
       res,
@@ -3285,6 +3289,7 @@ app.get(
         ...row,
         price:
           row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
+        dpPrice: row.dpPrice === null ? null : Number(row.dpPrice),
         highlights: parseJson(row.highlights, []),
       })),
     );

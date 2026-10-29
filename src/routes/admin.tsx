@@ -934,6 +934,7 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
     description: "",
     highlightsText: "",
     price: "",
+    dpPrice: "",
     imageUrl: "",
     status: "draft",
     sortOrder: 0,
@@ -972,6 +973,7 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
         body: JSON.stringify({
           ...form,
           price: form.price === "" ? null : Number(form.price),
+          dpPrice: form.dpPrice === "" ? null : Number(form.dpPrice),
           highlights: String(form.highlightsText || "")
             .split("\n")
             .map((v) => v.trim())
@@ -1161,6 +1163,12 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
               onChange={(value) => setForm({ ...form, price: value })}
             />
             <TextField
+              label="DP price"
+              type="number"
+              value={form.dpPrice}
+              onChange={(value) => setForm({ ...form, dpPrice: value })}
+            />
+            <TextField
               label="Subtitle"
               value={form.subtitle}
               onChange={(value) => setForm({ ...form, subtitle: value })}
@@ -1198,7 +1206,7 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
           </form>
         </Editor>
       )}
-      <DataTable headers={["Product", "Category", "Price", "Status", "Actions"]}>
+      <DataTable headers={["Product", "Category", "MRP / DP", "Status", "Actions"]}>
         {items.map((item) => (
           <tr key={item.id} className="border-t border-border">
             <td className="px-4 py-4">
@@ -1207,7 +1215,10 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
             </td>
             <td className="px-4 py-4 text-sm text-muted-foreground">{item.category || "—"}</td>
             <td className="px-4 py-4 text-sm">
-              {item.price ? `₹${Number(item.price).toLocaleString("en-IN")}` : "—"}
+              <div>MRP: {item.price ? `₹${Number(item.price).toLocaleString("en-IN")}` : "—"}</div>
+              <div className="text-xs text-muted-foreground">
+                DP: {item.dpPrice ? `₹${Number(item.dpPrice).toLocaleString("en-IN")}` : "—"}
+              </div>
             </td>
             <td className="px-4 py-4">
               <StatusBadge status={item.status} />

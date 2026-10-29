@@ -43,6 +43,7 @@ export type PublicProduct = {
   description?: string | null;
   highlights: string[];
   price?: number | null;
+  dpPrice?: number | null;
   imageUrl?: string | null;
 };
 

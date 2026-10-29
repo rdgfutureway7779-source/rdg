@@ -81,6 +81,14 @@ export async function migrate() {
       "ALTER TABLE media_assets ADD COLUMN file_data MEDIUMBLOB NULL AFTER size_bytes",
     );
   }
+  const [productDpPriceColumn] = await activePool.query(
+    "SHOW COLUMNS FROM products LIKE 'dp_price'",
+  );
+  if (!productDpPriceColumn.length) {
+    await activePool.query(
+      "ALTER TABLE products ADD COLUMN dp_price DECIMAL(12,2) NULL AFTER price",
+    );
+  }
 }
 
 export async function closePool() {

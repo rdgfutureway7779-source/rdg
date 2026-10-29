@@ -4,6 +4,8 @@ import {
   BookOpen,
   Car,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Dumbbell,
   Filter,
   Footprints,
@@ -25,6 +27,11 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import aiLearningImage from "@/assets/ai-learning.png";
+import aiWellnessImage from "@/assets/ai-wellness-product.png";
+import anmolRatanHeroImage from "@/assets/anmol-ratan-hero-v2.png";
+import familyWellnessImage from "@/assets/hero.jpg";
+import productsBannerImage from "@/assets/products.jpg";
 import { ProductVisual } from "@/components/shared/ProductCard";
 import {
   catalogDemoProducts,
@@ -80,6 +87,44 @@ const categoryIcons: Record<string, LucideIcon> = {
 
 const getCategoryIcon = (label: string) => categoryIcons[label] || LayoutGrid;
 
+const productBanners = [
+  {
+    image: productsBannerImage,
+    eyebrow: "RDG product catalogue",
+    title: "Products for wellness and opportunity",
+    description: "Explore the RDG collection and find the products that fit your everyday routine.",
+    href: "/products",
+  },
+  {
+    image: anmolRatanHeroImage,
+    eyebrow: "Signature product",
+    title: "Meet Anmol Ratan Juice",
+    description: "Discover the herbal and mixed-berry product at the heart of RDG Future Way.",
+    href: "/products/anmol-ratan-juice",
+  },
+  {
+    image: aiWellnessImage,
+    eyebrow: "Everyday wellness",
+    title: "Thoughtful products for daily routines",
+    description: "Browse product details, pricing and highlights before you choose.",
+    href: "/products",
+  },
+  {
+    image: familyWellnessImage,
+    eyebrow: "Family-first choices",
+    title: "Made for the routines that matter",
+    description: "Explore a growing collection across wellness, personal care and lifestyle.",
+    href: "/products",
+  },
+  {
+    image: aiLearningImage,
+    eyebrow: "Explore with RDG",
+    title: "Learn more about every product",
+    description: "Compare descriptions, prices and product information in one place.",
+    href: "/products",
+  },
+];
+
 const isProductPackage = (product: Product) => {
   const searchable = `${product.name} ${product.category}`.toLowerCase();
   return product.name !== "Anmol Ratan Juice" && /package|bundle/.test(searchable);
@@ -96,6 +141,22 @@ function Products() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("featured");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [activeBanner, setActiveBanner] = useState(0);
+  const [bannerPaused, setBannerPaused] = useState(false);
+
+  useEffect(() => {
+    if (bannerPaused) return;
+    const timer = window.setInterval(() => {
+      setActiveBanner((current) => (current + 1) % productBanners.length);
+    }, 5500);
+    return () => window.clearInterval(timer);
+  }, [bannerPaused]);
+
+  const moveBanner = (direction: number) => {
+    setActiveBanner(
+      (current) => (current + direction + productBanners.length) % productBanners.length,
+    );
+  };
 
   useEffect(() => {
     getPublicProducts().then((data) => {
@@ -117,6 +178,8 @@ function Products() {
               : item.name === "Anmol Ratan Juice"
                 ? 1200
                 : null,
+          dpPrice:
+            item.dpPrice === null || item.dpPrice === undefined ? null : Number(item.dpPrice),
           imageUrl: item.imageUrl || getCatalogImageForCategory(item.category),
         };
       });
@@ -150,6 +213,16 @@ function Products() {
         })),
     ],
     [catalogProducts],
+  );
+
+  const carouselCategories = useMemo(
+    () =>
+      categories.filter(
+        (category) =>
+          category.label !== "All categories" &&
+          Boolean(getCatalogImageForCategory(category.label)),
+      ),
+    [categories],
   );
 
   const visibleItems = useMemo(() => {
@@ -264,20 +337,20 @@ function Products() {
   );
 
   return (
-    <section className="bg-surface py-14 sm:py-20">
+    <section className="bg-[#fafbf7] py-8 sm:py-12">
       <div className="container-x">
-        <div className="rounded-[2rem] border border-primary/10 bg-[linear-gradient(120deg,#eef6ff_0%,#fffdf5_50%,#edf8f0_100%)] px-6 py-8 shadow-soft sm:px-10 sm:py-10">
+        <div className="rounded-2xl border border-primary/10 bg-[linear-gradient(120deg,#f1f8ec_0%,#fffdf5_52%,#eef7f9_100%)] px-6 py-8 shadow-soft sm:px-10 sm:py-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-primary uppercase">
-                <Sparkles className="h-4 w-4" /> RDG product store
+                <Sparkles className="h-4 w-4" /> RDG product catalogue
               </div>
               <h1 className="mt-3 font-display text-4xl leading-tight font-bold text-primary-dark sm:text-5xl">
-                Choose products for your everyday wellness journey.
+                Find exactly what you need.
               </h1>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Browse the RDG collection, compare product information and add your favourites to a
-                saved customer cart.
+                Explore the RDG collection by category, compare product information and view current
+                prices before adding a product to your customer cart.
               </p>
             </div>
             <a
@@ -286,6 +359,112 @@ function Products() {
             >
               <ShoppingCart className="h-4 w-4" /> View cart <ArrowRight className="h-4 w-4" />
             </a>
+          </div>
+        </div>
+
+        <section
+          className="product-banner-carousel mt-7"
+          aria-label="RDG product promotions"
+          onMouseEnter={() => setBannerPaused(true)}
+          onMouseLeave={() => setBannerPaused(false)}
+          onFocusCapture={() => setBannerPaused(true)}
+          onBlurCapture={() => setBannerPaused(false)}
+        >
+          <div
+            className="product-banner-track"
+            style={{ transform: `translateX(-${activeBanner * 100}%)` }}
+            aria-live="polite"
+          >
+            {productBanners.map((banner) => (
+              <article key={banner.title} className="product-banner-slide">
+                <img src={banner.image} alt="" />
+                <div className="product-banner-copy">
+                  <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
+                    {banner.eyebrow}
+                  </p>
+                  <h2 className="mt-3 max-w-xl font-display text-3xl leading-tight font-bold text-primary-dark sm:text-5xl">
+                    {banner.title}
+                  </h2>
+                  <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+                    {banner.description}
+                  </p>
+                  <a
+                    href={banner.href}
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-card transition-transform hover:-translate-y-0.5"
+                  >
+                    Explore products <ArrowRight className="h-4 w-4" />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="product-banner-arrow product-banner-arrow-left"
+            onClick={() => moveBanner(-1)}
+            aria-label="Previous banner"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            className="product-banner-arrow product-banner-arrow-right"
+            onClick={() => moveBanner(1)}
+            aria-label="Next banner"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+          <div className="product-banner-dots" aria-label="Choose banner">
+            {productBanners.map((banner, index) => (
+              <button
+                key={`banner-dot-${banner.title}`}
+                type="button"
+                onClick={() => setActiveBanner(index)}
+                className={index === activeBanner ? "is-active" : ""}
+                aria-label={`Show banner ${index + 1}`}
+                aria-current={index === activeBanner ? "true" : undefined}
+              />
+            ))}
+          </div>
+        </section>
+
+        <div className="category-showcase mt-7 border-y border-border bg-white py-6 shadow-soft sm:py-7">
+          <div className="category-showcase-heading">
+            <span />
+            <div className="text-center">
+              <p className="font-display text-2xl font-bold text-foreground sm:text-3xl">
+                Categories
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                Find Exactly What You Need.
+              </p>
+            </div>
+            <span />
+          </div>
+          <div className="category-carousel mt-7" aria-label="Product categories carousel">
+            <div className="category-carousel-track">
+              {[...carouselCategories, ...carouselCategories].map((category, index) => {
+                const imageUrl = getCatalogImageForCategory(category.label);
+                return (
+                  <button
+                    key={`${category.label}-${index}`}
+                    type="button"
+                    onClick={() => setActiveCategory(category.label)}
+                    className={`category-carousel-card ${activeCategory === category.label ? "is-active" : ""}`}
+                    aria-label={`View ${category.label}`}
+                  >
+                    <span className="category-carousel-image">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt="" loading="lazy" />
+                      ) : (
+                        <category.icon className="h-10 w-10 text-primary" aria-hidden="true" />
+                      )}
+                    </span>
+                    <span>{category.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -346,28 +525,37 @@ function Products() {
                 {visibleItems.map((item) => (
                   <article
                     key={item.id}
-                    className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-card"
+                    className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-card"
                   >
                     <a href={`/products/${item.slug || item.id}`} className="block">
                       <ProductVisual compact imageUrl={item.imageUrl} productName={item.name} />
                     </a>
                     <div className="flex flex-1 flex-col p-5">
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-[11px] font-semibold tracking-[0.16em] text-primary uppercase">
+                        <p className="text-[10px] font-semibold tracking-[0.16em] text-primary uppercase">
                           {item.category}
                         </p>
-                        <span className="shrink-0 rounded-full bg-gold-grad px-2.5 py-1 text-[10px] font-bold text-gold-foreground">
+                        <span className="shrink-0 rounded-full bg-[#f7f1d7] px-2.5 py-1 text-[10px] font-bold text-gold-foreground">
                           {item.badge || "RDG product"}
                         </span>
                       </div>
-                      <h3 className="mt-3 font-display text-xl font-bold text-foreground">
+                      <h3 className="mt-3 font-display text-lg font-bold text-foreground">
                         {item.name}
                       </h3>
                       <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                         {item.subtitle}
                       </p>
+                      <div className="mt-4 border-t border-border pt-4">
+                        <p className="text-xs text-muted-foreground">MRP</p>
+                        <p className="mt-0.5 text-xl font-bold text-primary">{money(item.price)}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Inclusive of all taxes
+                        </p>
+                      </div>
                       <div className="mt-4 flex items-center justify-between gap-3">
-                        <p className="text-lg font-bold text-primary">{money(item.price)}</p>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Product details
+                        </span>
                         <a
                           href={`/products/${item.slug || item.id}`}
                           className="inline-flex items-center gap-1 text-sm font-semibold text-primary"

@@ -96,6 +96,7 @@ export type Product = {
   highlights: string[];
   badge?: string;
   price?: number | null;
+  dpPrice?: number | null;
   imageUrl?: string | null;
 };
 
