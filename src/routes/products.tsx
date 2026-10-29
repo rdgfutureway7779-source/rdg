@@ -390,10 +390,7 @@ function Products() {
                   </picture>
                 )}
                 <div className="product-banner-copy">
-                  <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
-                    {banner.eyebrow}
-                  </p>
-                  <h2 className="mt-3 max-w-xl font-display text-3xl leading-tight font-bold text-primary-dark sm:text-5xl">
+                  <h2 className="max-w-xl font-display text-3xl leading-tight font-bold text-primary-dark sm:text-5xl">
                     {banner.title}
                   </h2>
                   <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
