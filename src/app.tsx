@@ -1,39 +1,53 @@
-import { Component, type ReactNode, useEffect, useState } from "react";
+import {
+  Component,
+  lazy,
+  Suspense,
+  type ComponentType,
+  type ReactNode,
+  useEffect,
+  useState,
+} from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/shared/FloatingWhatsApp";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
-import Home from "@/routes/index";
-import About from "@/routes/about";
-import Blog from "@/routes/blog";
-import BusinessOpportunity from "@/routes/business-opportunity";
-import Career from "@/routes/career";
-import Contact from "@/routes/contact";
-import BecomeDistributor from "@/routes/become-distributor";
-import Downloads from "@/routes/downloads";
-import Events from "@/routes/events";
-import Faqs from "@/routes/faqs";
-import Franchise from "@/routes/franchise";
-import Gallery from "@/routes/gallery";
-import GenerationPlan from "@/routes/generation-plan";
-import IncomeCalculator from "@/routes/income-calculator";
-import Products from "@/routes/products";
-import PrivacyPolicy from "@/routes/privacy-policy";
-import RefundPolicy from "@/routes/refund-policy";
-import ShippingPolicy from "@/routes/shipping-policy";
-import SuccessStories from "@/routes/success-stories";
-import Terms from "@/routes/terms";
-import Cart from "@/routes/cart";
-import Checkout from "@/routes/checkout";
-import CustomerAuth from "@/routes/customer-auth";
-import CustomerOrders from "@/routes/customer-orders";
-import DistributorAuth from "@/routes/distributor-auth";
-import DistributorDashboard from "@/routes/distributor-dashboard";
-import ProductDetail from "@/routes/product-detail";
 import { LanguageProvider } from "@/lib/i18n";
-import { AdminDashboard, AdminLogin } from "@/routes/admin";
+import Products from "@/routes/products";
 
-const pages: Record<string, React.ComponentType> = {
+const Home = lazy(() => import("@/routes/index"));
+const About = lazy(() => import("@/routes/about"));
+const Blog = lazy(() => import("@/routes/blog"));
+const BusinessOpportunity = lazy(() => import("@/routes/business-opportunity"));
+const Career = lazy(() => import("@/routes/career"));
+const Contact = lazy(() => import("@/routes/contact"));
+const BecomeDistributor = lazy(() => import("@/routes/become-distributor"));
+const Downloads = lazy(() => import("@/routes/downloads"));
+const Events = lazy(() => import("@/routes/events"));
+const Faqs = lazy(() => import("@/routes/faqs"));
+const Franchise = lazy(() => import("@/routes/franchise"));
+const Gallery = lazy(() => import("@/routes/gallery"));
+const GenerationPlan = lazy(() => import("@/routes/generation-plan"));
+const IncomeCalculator = lazy(() => import("@/routes/income-calculator"));
+const PrivacyPolicy = lazy(() => import("@/routes/privacy-policy"));
+const RefundPolicy = lazy(() => import("@/routes/refund-policy"));
+const ShippingPolicy = lazy(() => import("@/routes/shipping-policy"));
+const SuccessStories = lazy(() => import("@/routes/success-stories"));
+const Terms = lazy(() => import("@/routes/terms"));
+const Cart = lazy(() => import("@/routes/cart"));
+const Checkout = lazy(() => import("@/routes/checkout"));
+const CustomerAuth = lazy(() => import("@/routes/customer-auth"));
+const CustomerOrders = lazy(() => import("@/routes/customer-orders"));
+const DistributorAuth = lazy(() => import("@/routes/distributor-auth"));
+const DistributorDashboard = lazy(() => import("@/routes/distributor-dashboard"));
+const ProductDetail = lazy(() => import("@/routes/product-detail"));
+const AdminLogin = lazy(() =>
+  import("@/routes/admin").then(({ AdminLogin }) => ({ default: AdminLogin })),
+);
+const AdminDashboard = lazy(() =>
+  import("@/routes/admin").then(({ AdminDashboard }) => ({ default: AdminDashboard })),
+);
+
+const pages: Record<string, ComponentType> = {
   "/": Home,
   "/about": About,
   "/blog": Blog,
@@ -126,8 +140,112 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: bo
   }
 }
 
+const siteUrl = "https://rdgfutureway.com";
+const defaultSeo = {
+  title: "RDG Future Way | Wellness Products & Business Opportunities",
+  description:
+    "Explore RDG Future Way wellness, lifestyle and nutrition products, product details, pricing and business opportunities.",
+};
+const seoByPath: Record<string, { title: string; description: string }> = {
+  "/": defaultSeo,
+  "/products": {
+    title: "Products | RDG Future Way",
+    description:
+      "Browse RDG Future Way wellness, nutrition, personal care and lifestyle products with product details and pricing.",
+  },
+  "/about": {
+    title: "About RDG Future Way | Quality Products & Opportunity",
+    description:
+      "Learn about RDG Future Way, our product journey, wellness focus and direct selling opportunity.",
+  },
+  "/business-opportunity": {
+    title: "Business Opportunity | RDG Future Way",
+    description:
+      "Discover the RDG Future Way direct selling business opportunity, product model and distributor support.",
+  },
+  "/contact": {
+    title: "Contact RDG Future Way",
+    description:
+      "Contact RDG Future Way for product, distributor and business opportunity information.",
+  },
+  "/blog": {
+    title: "RDG Future Way Blog | Wellness & Business",
+    description:
+      "Read RDG Future Way articles about wellness, products, lifestyle and business growth.",
+  },
+};
+
+function updateMeta(attribute: "name" | "property", key: string, content: string) {
+  let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
+  if (!element) {
+    element = document.createElement("meta");
+    element.setAttribute(attribute, key);
+    document.head.appendChild(element);
+  }
+  element.content = content;
+}
+
+function useSeo(path: string) {
+  useEffect(() => {
+    const normalizedPath = path.startsWith("/products/") ? "/products" : path;
+    const seo = seoByPath[normalizedPath] || defaultSeo;
+    const isPrivatePage = /^(\/admin|\/customer|\/distributor|\/account|\/cart|\/checkout)/.test(
+      path,
+    );
+    const pageTitle = path.startsWith("/products/")
+      ? `${decodeURIComponent(path.split("/").pop() || "Product")
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (letter) => letter.toUpperCase())} | RDG Future Way`
+      : seo.title;
+    const canonicalUrl = `${siteUrl}${path === "/" ? "" : path}`;
+
+    document.title = pageTitle;
+    document.documentElement.lang = "en-IN";
+    updateMeta("name", "description", seo.description);
+    updateMeta("name", "robots", isPrivatePage ? "noindex,nofollow" : "index,follow");
+    updateMeta("property", "og:title", pageTitle);
+    updateMeta("property", "og:description", seo.description);
+    updateMeta("property", "og:url", canonicalUrl);
+    updateMeta("property", "og:type", path.startsWith("/products/") ? "product" : "website");
+    updateMeta("name", "twitter:title", pageTitle);
+    updateMeta("name", "twitter:description", seo.description);
+
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = canonicalUrl;
+
+    let structuredData = document.getElementById("rdg-structured-data");
+    if (!structuredData) {
+      structuredData = document.createElement("script");
+      structuredData.id = "rdg-structured-data";
+      structuredData.type = "application/ld+json";
+      document.head.appendChild(structuredData);
+    }
+    structuredData.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": path.startsWith("/products/") ? "Product" : "Organization",
+      name: pageTitle,
+      description: seo.description,
+      url: canonicalUrl,
+      ...(path.startsWith("/products/")
+        ? { brand: { "@type": "Brand", name: "RDG Future Way" } }
+        : {
+            logo: `${siteUrl}/favicon.png`,
+            telephone: "+91 73979 67779",
+            email: "rdgfutureway7779@gmail.com",
+          }),
+    });
+  }, [path]);
+}
+
 export function App() {
   const [path, setPath] = useState(() => window.location.pathname.replace(/\/$/, "") || "/");
+
+  useSeo(path);
 
   useEffect(() => {
     const onPopState = () => setPath(window.location.pathname.replace(/\/$/, "") || "/");
@@ -137,11 +255,18 @@ export function App() {
 
   const Page = pages[path] ?? (path.startsWith("/products/") ? ProductDetail : NotFound);
   const isAdmin = path.startsWith("/admin");
+  const pageFallback = (
+    <div className="container-x flex min-h-[40vh] items-center justify-center py-20 text-sm text-muted-foreground">
+      Loading RDG Future Way…
+    </div>
+  );
 
   if (isAdmin) {
     return (
       <LanguageProvider>
-        <Page />
+        <Suspense fallback={pageFallback}>
+          <Page />
+        </Suspense>
       </LanguageProvider>
     );
   }
@@ -152,7 +277,9 @@ export function App() {
         <SmoothScroll />
         <Navbar />
         <main>
-          <Page />
+          <Suspense fallback={pageFallback}>
+            <Page />
+          </Suspense>
         </main>
         <Footer />
         <FloatingWhatsApp />

@@ -1,6 +1,6 @@
 import { ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import bottleImage from "@/assets/anmol-ratan-juice-bottle.png";
+import bottleImage from "@/assets/optimized/anmol-ratan-juice-bottle.webp";
 import { getCatalogImageForCategory } from "@/data/site";
 import {
   getCustomerCart,

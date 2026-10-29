@@ -1,19 +1,19 @@
-import agricultureGardenImage from "@/assets/catalog/categories/agriculture-garden.jpg";
-import ayurvedicHerbalImage from "@/assets/catalog/categories/ayurvedic-herbal.jpg";
-import beautyHealthGroceryImage from "@/assets/catalog/categories/beauty-health-grocery.jpg";
-import booksImage from "@/assets/catalog/categories/books.jpg";
-import carIndustrialImage from "@/assets/catalog/categories/car-industrial.jpg";
-import footwearImage from "@/assets/catalog/categories/footwear.jpg";
-import homeKitchenPetsImage from "@/assets/catalog/categories/home-kitchen-pets.jpg";
-import menFashionImage from "@/assets/catalog/categories/mens-fashion.jpg";
-import mobilesComputersImage from "@/assets/catalog/categories/mobiles-computers.jpg";
-import moviesMusicImage from "@/assets/catalog/categories/movies-music.jpg";
-import personalCareImage from "@/assets/catalog/categories/personal-care.jpg";
-import sportsFitnessImage from "@/assets/catalog/categories/sports-fitness.jpg";
-import toysKidsImage from "@/assets/catalog/categories/toys-kids.jpg";
-import tvElectronicsImage from "@/assets/catalog/categories/tv-electronics.jpg";
-import wellnessNutritionImage from "@/assets/catalog/categories/wellness-nutrition.jpg";
-import womensFashionImage from "@/assets/catalog/categories/womens-fashion.jpg";
+import agricultureGardenImage from "@/assets/optimized/catalog-mobile/agriculture-garden.webp";
+import ayurvedicHerbalImage from "@/assets/optimized/catalog-mobile/ayurvedic-herbal.webp";
+import beautyHealthGroceryImage from "@/assets/optimized/catalog-mobile/beauty-health-grocery.webp";
+import booksImage from "@/assets/optimized/catalog-mobile/books.webp";
+import carIndustrialImage from "@/assets/optimized/catalog-mobile/car-industrial.webp";
+import footwearImage from "@/assets/optimized/catalog-mobile/footwear.webp";
+import homeKitchenPetsImage from "@/assets/optimized/catalog-mobile/home-kitchen-pets.webp";
+import menFashionImage from "@/assets/optimized/catalog-mobile/mens-fashion.webp";
+import mobilesComputersImage from "@/assets/optimized/catalog-mobile/mobiles-computers.webp";
+import moviesMusicImage from "@/assets/optimized/catalog-mobile/movies-music.webp";
+import personalCareImage from "@/assets/optimized/catalog-mobile/personal-care.webp";
+import sportsFitnessImage from "@/assets/optimized/catalog-mobile/sports-fitness.webp";
+import toysKidsImage from "@/assets/optimized/catalog-mobile/toys-kids.webp";
+import tvElectronicsImage from "@/assets/optimized/catalog-mobile/tv-electronics.webp";
+import wellnessNutritionImage from "@/assets/optimized/catalog-mobile/wellness-nutrition.webp";
+import womensFashionImage from "@/assets/optimized/catalog-mobile/womens-fashion.webp";
 
 export const company = {
   name: "RDG Future Way Pvt. Ltd.",

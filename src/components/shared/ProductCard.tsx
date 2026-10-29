@@ -1,11 +1,18 @@
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import bottleImage from "@/assets/anmol-ratan-juice-bottle.png";
+import bottleImage from "@/assets/optimized/anmol-ratan-juice-bottle.webp";
+import bottleThumbnailImage from "@/assets/optimized/anmol-ratan-juice-bottle-thumb.webp";
 import type { Product } from "@/data/site";
 
-function resolveProductImage(imageUrl?: string | null) {
-  const isCatalogAsset = imageUrl?.startsWith("/src/assets/catalog/");
-  return imageUrl && (!imageUrl.startsWith("/src/") || isCatalogAsset) ? imageUrl : bottleImage;
+function resolveProductImage(imageUrl?: string | null, compact = false) {
+  const isCatalogAsset =
+    imageUrl?.startsWith("/src/assets/catalog/") ||
+    imageUrl?.startsWith("/src/assets/optimized/catalog");
+  return imageUrl && (!imageUrl.startsWith("/src/") || isCatalogAsset)
+    ? imageUrl
+    : compact
+      ? bottleThumbnailImage
+      : bottleImage;
 }
 
 export function ProductVisual({
@@ -17,11 +24,11 @@ export function ProductVisual({
   imageUrl?: string | null;
   productName?: string;
 }) {
-  const [image, setImage] = useState(() => resolveProductImage(imageUrl));
+  const [image, setImage] = useState(() => resolveProductImage(imageUrl, compact));
 
   useEffect(() => {
-    setImage(resolveProductImage(imageUrl));
-  }, [imageUrl]);
+    setImage(resolveProductImage(imageUrl, compact));
+  }, [compact, imageUrl]);
 
   return (
     <div
@@ -33,9 +40,12 @@ export function ProductVisual({
       <img
         src={image}
         alt={`${productName} product image`}
-        width={1024}
-        height={1536}
-        onError={() => setImage(bottleImage)}
+        width={compact ? 208 : 512}
+        height={compact ? 312 : 768}
+        loading={compact ? "lazy" : "eager"}
+        decoding="async"
+        fetchPriority={compact ? "low" : "high"}
+        onError={() => setImage(compact ? bottleThumbnailImage : bottleImage)}
         className={`relative max-h-full w-auto object-contain drop-shadow-2xl ${compact ? "h-52" : "h-[29rem]"}`}
       />
     </div>

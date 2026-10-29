@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, Calculator as CalculatorIcon, Info, Network, Wallet } from "lucide-react";
-import bottleImage from "@/assets/anmol-ratan-juice-bottle.png";
+import bottleImage from "@/assets/optimized/anmol-ratan-juice-bottle.webp";
 import incomeCalculatorBreadcrumbImage from "@/assets/income-calculator-breadcrumb.png";
 import { bonuses, directReferralPlans, planLevels } from "@/data/site";
 

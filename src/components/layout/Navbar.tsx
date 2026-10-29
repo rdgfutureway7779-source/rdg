@@ -11,7 +11,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import logo from "@/assets/logo-transparent.png";
+import logo from "@/assets/optimized/logo-small.webp";
 import { catalogDemoProducts, navigation, products } from "@/data/site";
 import { getCustomerCart, getCustomerMe, type Customer } from "@/lib/customer-api";
 import { getPublicProducts } from "@/lib/cms";

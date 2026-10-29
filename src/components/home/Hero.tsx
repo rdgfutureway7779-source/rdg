@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { ArrowRight, Ban, Leaf, ShieldCheck, Sparkles } from "lucide-react";
-import heroImage from "@/assets/anmol-ratan-hero-v2.png";
+import heroImage from "@/assets/optimized/banners/anmol-ratan-hero-v2.webp";
 import { getPublicCmsConfig, type PublicCmsConfig } from "@/lib/cms";
 
 const highlights = [
@@ -44,6 +44,9 @@ export function Hero() {
         }
         width={1984}
         height={793}
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/80 to-background/10 sm:via-background/68" />

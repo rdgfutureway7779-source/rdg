@@ -27,11 +27,12 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import aiLearningImage from "@/assets/ai-learning.png";
-import aiWellnessImage from "@/assets/ai-wellness-product.png";
-import anmolRatanHeroImage from "@/assets/anmol-ratan-hero-v2.png";
-import familyWellnessImage from "@/assets/hero.jpg";
-import productsBannerImage from "@/assets/products.jpg";
+import aiLearningImage from "@/assets/optimized/banners/ai-learning.webp";
+import aiWellnessImage from "@/assets/optimized/banners/ai-wellness-product.webp";
+import anmolRatanHeroImage from "@/assets/optimized/banners/anmol-ratan-hero-v2.webp";
+import familyWellnessImage from "@/assets/optimized/banners/hero.webp";
+const productsBannerImage = "/products-banner.webp";
+const productsBannerMobileImage = "/products-banner-mobile.webp";
 import { ProductVisual } from "@/components/shared/ProductCard";
 import {
   catalogDemoProducts,
@@ -148,7 +149,7 @@ function Products() {
     if (bannerPaused) return;
     const timer = window.setInterval(() => {
       setActiveBanner((current) => (current + 1) % productBanners.length);
-    }, 5500);
+    }, 12000);
     return () => window.clearInterval(timer);
   }, [bannerPaused]);
 
@@ -375,9 +376,22 @@ function Products() {
             style={{ transform: `translateX(-${activeBanner * 100}%)` }}
             aria-live="polite"
           >
-            {productBanners.map((banner) => (
+            {productBanners.map((banner, index) => (
               <article key={banner.title} className="product-banner-slide">
-                <img src={banner.image} alt="" />
+                {index === activeBanner && (
+                  <picture>
+                    {index === 0 && (
+                      <source media="(max-width: 639px)" srcSet={productsBannerMobileImage} />
+                    )}
+                    <img
+                      src={banner.image}
+                      alt=""
+                      loading="eager"
+                      fetchPriority="high"
+                      decoding="async"
+                    />
+                  </picture>
+                )}
                 <div className="product-banner-copy">
                   <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
                     {banner.eyebrow}
@@ -455,7 +469,7 @@ function Products() {
                   >
                     <span className="category-carousel-image">
                       {imageUrl ? (
-                        <img src={imageUrl} alt="" loading="lazy" />
+                        <img src={imageUrl} alt="" loading="eager" decoding="async" />
                       ) : (
                         <category.icon className="h-10 w-10 text-primary" aria-hidden="true" />
                       )}

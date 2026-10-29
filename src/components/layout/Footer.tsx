@@ -1,5 +1,5 @@
 import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Send, Youtube } from "lucide-react";
-import logo from "@/assets/logo-transparent.png";
+import logo from "@/assets/optimized/logo-small.webp";
 import { company } from "@/data/site";
 
 const quickLinks = [
