@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Send, Youtube } from "lucide-react";
+import { Facebook, Instagram, Mail, MapPin, Phone, Send, Youtube } from "lucide-react";
 import logo from "@/assets/optimized/logo-small.webp";
 import { company } from "@/data/site";
 
@@ -26,6 +26,24 @@ const policyLinks = [
   { label: "Refund Policy", to: "/refund-policy" },
   { label: "Shipping Policy", to: "/shipping-policy" },
   { label: "Contact", to: "/contact" },
+];
+
+const socialLinks = [
+  {
+    label: "Facebook",
+    href: "https://www.facebook.com/share/1H16jWGmVB/",
+    Icon: Facebook,
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/mushtak2296/",
+    Icon: Instagram,
+  },
+  {
+    label: "YouTube",
+    href: "https://youtube.com/@royaldiamondgroup4794",
+    Icon: Youtube,
+  },
 ];
 
 export function Footer() {
@@ -68,11 +86,13 @@ export function Footer() {
             </p>
           </div>
           <div className="mt-6 flex gap-3">
-            {[Facebook, Instagram, Youtube, Linkedin].map((Icon, i) => (
+            {socialLinks.map(({ Icon, label, href }) => (
               <a
-                key={i}
-                href="#"
-                aria-label="Social link"
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Visit RDG Future Way on ${label}`}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/10 transition-colors hover:bg-gold hover:text-gold-foreground"
               >
                 <Icon className="h-4 w-4" />
