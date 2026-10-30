@@ -1,5 +1,6 @@
 import { ArrowRight, LockKeyhole, UserPlus } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 import { directReferralPlans } from "@/data/site";
 import {
   createDistributorPaymentOrder,
@@ -281,11 +282,9 @@ function DistributorAuth() {
                 </span>
               )}
             </label>
-            <input
+            <PasswordInput
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              type="password"
-              className="field"
               placeholder="Password (8+ characters)"
               autoComplete={mode === "register" ? "new-password" : "current-password"}
               minLength={8}

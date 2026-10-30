@@ -124,6 +124,14 @@ export async function logoutCustomer() {
   await customerApi("/api/customer/auth/logout", { method: "POST" });
 }
 
+export async function changeCustomerPassword(currentPassword: string, newPassword: string) {
+  await customerApi("/api/customer/auth/change-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
 export async function getCustomerCart() {
   return customerApi<CustomerCartItem[]>("/api/customer/cart");
 }

@@ -1,5 +1,6 @@
 import { ArrowRight, LockKeyhole, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 import { loginCustomer, registerCustomer } from "@/lib/customer-api";
 import { isOptionalMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 
@@ -122,11 +123,9 @@ function CustomerAuth() {
                 placeholder="Mobile number (optional)"
               />
             )}
-            <input
+            <PasswordInput
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              type="password"
-              className="field"
               placeholder="Password (8+ characters)"
               minLength={8}
               required

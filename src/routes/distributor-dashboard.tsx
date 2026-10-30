@@ -1,6 +1,8 @@
 import { ArrowLeft, LogOut, Network, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ChangePasswordForm } from "@/components/shared/ChangePasswordForm";
 import {
+  changeDistributorPassword,
   getDistributorNetwork,
   logoutDistributor,
   type DistributorNetwork,
@@ -229,6 +231,10 @@ function DistributorDashboard() {
               </p>
             )}
           </div>
+        </div>
+
+        <div className="mt-8">
+          <ChangePasswordForm onSubmit={changeDistributorPassword} />
         </div>
 
         <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card shadow-card">

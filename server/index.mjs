@@ -272,7 +272,7 @@ const requiredMobileSchema = z
 const distributorPackagePlans = [
   { packageCount: 1, packageValue: 3500 },
   { packageCount: 2, packageValue: 7000 },
-  { packageCount: 3, packageValue: 10500 },
+  { packageCount: 3, packageValue: 9500 },
   { packageCount: 4, packageValue: 14000 },
 ];
 const customerRegisterSchema = z.object({
@@ -284,6 +284,10 @@ const customerRegisterSchema = z.object({
 const customerLoginSchema = z.object({
   email: z.string().email().max(190),
   password: z.string().min(1).max(120),
+});
+const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1).max(120),
+  newPassword: z.string().min(8).max(120),
 });
 const razorpayOrderIdSchema = z
   .string()
@@ -407,6 +411,7 @@ const productSchema = z.object({
   highlights: z.array(z.string().max(255)).default([]),
   price: z.coerce.number().min(0).optional().nullable(),
   dpPrice: z.coerce.number().min(0).optional().nullable(),
+  netContent: z.string().trim().max(120).optional().nullable(),
   stockQuantity: z.coerce.number().int().min(0).optional().nullable(),
   isServiceable: z.boolean().default(true),
   imageUrl: z.string().max(500).optional().nullable(),
@@ -1057,6 +1062,28 @@ app.get(
 );
 
 app.post(
+  "/api/customer/auth/change-password",
+  requireCustomerAuth,
+  asyncRoute(async (req, res) => {
+    const input = passwordChangeSchema.safeParse(req.body);
+    if (!input.success) return fail(res, "Use a new password with at least 8 characters.", 422);
+    const [[customer]] = await query(
+      "SELECT password_hash AS passwordHash FROM customers WHERE id = ? LIMIT 1",
+      [req.customer.id],
+    );
+    if (!customer || !(await bcrypt.compare(input.data.currentPassword, customer.passwordHash))) {
+      return fail(res, "Your current password is incorrect.", 400);
+    }
+    const passwordHash = await bcrypt.hash(input.data.newPassword, 12);
+    await query("UPDATE customers SET password_hash = ? WHERE id = ?", [
+      passwordHash,
+      req.customer.id,
+    ]);
+    return ok(res, { changed: true });
+  }),
+);
+
+app.post(
   "/api/distributor/payments/order",
   loginLimiter,
   asyncRoute(async (req, res) => {
@@ -1315,6 +1342,28 @@ app.get(
   "/api/distributor/auth/me",
   requireDistributorAuth,
   asyncRoute(async (req, res) => ok(res, { distributor: distributorProfile(req.distributor) })),
+);
+
+app.post(
+  "/api/distributor/auth/change-password",
+  requireDistributorAuth,
+  asyncRoute(async (req, res) => {
+    const input = passwordChangeSchema.safeParse(req.body);
+    if (!input.success) return fail(res, "Use a new password with at least 8 characters.", 422);
+    const [[account]] = await query(
+      "SELECT password_hash AS passwordHash FROM distributor_accounts WHERE id = ? LIMIT 1",
+      [req.distributor.accountId],
+    );
+    if (!account || !(await bcrypt.compare(input.data.currentPassword, account.passwordHash))) {
+      return fail(res, "Your current password is incorrect.", 400);
+    }
+    const passwordHash = await bcrypt.hash(input.data.newPassword, 12);
+    await query("UPDATE distributor_accounts SET password_hash = ? WHERE id = ?", [
+      passwordHash,
+      req.distributor.accountId,
+    ]);
+    return ok(res, { changed: true });
+  }),
 );
 
 app.get(
@@ -2449,7 +2498,7 @@ app.get(
   requireAuth,
   asyncRoute(async (_req, res) => {
     const [rows] = await query(
-      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, stock_quantity AS stockQuantity, is_serviceable AS isServiceable, image_url AS imageUrl, status, sort_order AS sortOrder, updated_at AS updatedAt FROM products ORDER BY sort_order ASC, updated_at DESC",
+      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, net_content AS netContent, stock_quantity AS stockQuantity, is_serviceable AS isServiceable, image_url AS imageUrl, status, sort_order AS sortOrder, updated_at AS updatedAt FROM products ORDER BY sort_order ASC, updated_at DESC",
     );
     return ok(
       res,
@@ -2475,7 +2524,7 @@ app.post(
     if (!input) return;
     try {
       const [result] = await query(
-        "INSERT INTO products (name, slug, category, subtitle, description, highlights, price, dp_price, stock_quantity, is_serviceable, image_url, status, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO products (name, slug, category, subtitle, description, highlights, price, dp_price, net_content, stock_quantity, is_serviceable, image_url, status, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
           input.name,
           input.slug,
@@ -2485,6 +2534,7 @@ app.post(
           JSON.stringify(input.highlights),
           input.price ?? null,
           input.dpPrice ?? null,
+          input.netContent || null,
           input.stockQuantity ?? null,
           input.isServiceable ? 1 : 0,
           input.imageUrl || null,
@@ -2511,7 +2561,7 @@ app.put(
     if (!input) return;
     try {
       const [result] = await query(
-        "UPDATE products SET name = ?, slug = ?, category = ?, subtitle = ?, description = ?, highlights = ?, price = ?, dp_price = ?, stock_quantity = ?, is_serviceable = ?, image_url = ?, status = ?, sort_order = ? WHERE id = ?",
+        "UPDATE products SET name = ?, slug = ?, category = ?, subtitle = ?, description = ?, highlights = ?, price = ?, dp_price = ?, net_content = ?, stock_quantity = ?, is_serviceable = ?, image_url = ?, status = ?, sort_order = ? WHERE id = ?",
         [
           input.name,
           input.slug,
@@ -2521,6 +2571,7 @@ app.put(
           JSON.stringify(input.highlights),
           input.price ?? null,
           input.dpPrice ?? null,
+          input.netContent || null,
           input.stockQuantity ?? null,
           input.isServiceable ? 1 : 0,
           input.imageUrl || null,
@@ -3310,7 +3361,7 @@ app.get(
   "/api/public/products",
   asyncRoute(async (_req, res) => {
     const [rows] = await query(
-      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, stock_quantity AS stockQuantity, is_serviceable AS isServiceable, image_url AS imageUrl FROM products WHERE status = 'published' ORDER BY sort_order ASC, updated_at DESC",
+      "SELECT id, name, slug, category, subtitle, description, highlights, price, dp_price AS dpPrice, net_content AS netContent, stock_quantity AS stockQuantity, is_serviceable AS isServiceable, image_url AS imageUrl FROM products WHERE status = 'published' ORDER BY sort_order ASC, updated_at DESC",
     );
     return ok(
       res,

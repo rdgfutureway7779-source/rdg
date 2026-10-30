@@ -89,6 +89,14 @@ export async function migrate() {
       "ALTER TABLE products ADD COLUMN dp_price DECIMAL(12,2) NULL AFTER price",
     );
   }
+  const [productNetContentColumn] = await activePool.query(
+    "SHOW COLUMNS FROM products LIKE 'net_content'",
+  );
+  if (!productNetContentColumn.length) {
+    await activePool.query(
+      "ALTER TABLE products ADD COLUMN net_content VARCHAR(120) NULL AFTER dp_price",
+    );
+  }
   const [productStockColumn] = await activePool.query(
     "SHOW COLUMNS FROM products LIKE 'stock_quantity'",
   );

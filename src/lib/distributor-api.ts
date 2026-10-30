@@ -112,6 +112,14 @@ export async function logoutDistributor() {
   await distributorApi("/api/distributor/auth/logout", { method: "POST" });
 }
 
+export async function changeDistributorPassword(currentPassword: string, newPassword: string) {
+  await distributorApi("/api/distributor/auth/change-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
 export async function getDistributorNetwork() {
   return distributorApi<DistributorNetwork>("/api/distributor/network");
 }

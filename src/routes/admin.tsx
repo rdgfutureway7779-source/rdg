@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 import {
   Activity,
   ArrowUpRight,
@@ -150,10 +151,9 @@ export function AdminLogin() {
             </label>
             <label className="block text-sm font-semibold text-foreground">
               Password
-              <input
+              <PasswordInput
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                type="password"
                 autoComplete="new-password"
                 className={fieldClass}
                 required
@@ -935,6 +935,7 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
     highlightsText: "",
     price: "",
     dpPrice: "",
+    netContent: "",
     stockQuantity: "",
     isServiceable: true,
     imageUrl: "",
@@ -984,6 +985,7 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
           ...form,
           price: form.price === "" ? null : Number(form.price),
           dpPrice: form.dpPrice === "" ? null : Number(form.dpPrice),
+          netContent: form.netContent === "" ? null : String(form.netContent).trim(),
           stockQuantity: form.stockQuantity === "" ? null : Number(form.stockQuantity),
           isServiceable: Boolean(form.isServiceable),
           highlights: String(form.highlightsText || "")
@@ -1181,6 +1183,12 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
               onChange={(value) => setForm({ ...form, dpPrice: value })}
             />
             <TextField
+              label="Net quantity / content"
+              value={form.netContent}
+              onChange={(value) => setForm({ ...form, netContent: value })}
+              placeholder="500 ml per bottle, 1 piece, 1 set"
+            />
+            <TextField
               label="Stock quantity"
               type="number"
               value={form.stockQuantity}
@@ -1229,7 +1237,17 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
           </form>
         </Editor>
       )}
-      <DataTable headers={["Product", "Category", "MRP / DP", "Availability", "Status", "Actions"]}>
+      <DataTable
+        headers={[
+          "Product",
+          "Category",
+          "MRP / DP",
+          "Net content",
+          "Availability",
+          "Status",
+          "Actions",
+        ]}
+      >
         {items.map((item) => (
           <tr key={item.id} className="border-t border-border">
             <td className="px-4 py-4">
@@ -1243,6 +1261,7 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
                 DP: {item.dpPrice ? `₹${Number(item.dpPrice).toLocaleString("en-IN")}` : "—"}
               </div>
             </td>
+            <td className="px-4 py-4 text-sm text-muted-foreground">{item.netContent || "—"}</td>
             <td className="px-4 py-4 text-sm">
               <div>
                 {item.stockQuantity === null || item.stockQuantity === undefined

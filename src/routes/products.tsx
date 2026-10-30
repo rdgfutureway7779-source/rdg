@@ -36,6 +36,7 @@ const productsBannerMobileImage = "/products-banner-mobile.webp";
 import { ProductVisual } from "@/components/shared/ProductCard";
 import {
   catalogDemoProducts,
+  getDefaultProductNetContent,
   getCatalogImageForCategory,
   products,
   type Product,
@@ -180,7 +181,12 @@ function Products() {
                 ? 1200
                 : null,
           dpPrice:
-            item.dpPrice === null || item.dpPrice === undefined ? null : Number(item.dpPrice),
+            item.dpPrice === null || item.dpPrice === undefined
+              ? item.name === "Anmol Ratan Juice"
+                ? 700
+                : null
+              : Number(item.dpPrice),
+          netContent: item.netContent || getDefaultProductNetContent(item.name, item.category),
           stockQuantity:
             item.stockQuantity === null || item.stockQuantity === undefined
               ? null
@@ -541,7 +547,12 @@ function Products() {
                     className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-card"
                   >
                     <a href={`/products/${item.slug || item.id}`} className="block">
-                      <ProductVisual compact imageUrl={item.imageUrl} productName={item.name} />
+                      <ProductVisual
+                        compact
+                        imageUrl={item.imageUrl}
+                        productName={item.name}
+                        category={item.category}
+                      />
                     </a>
                     <div className="flex flex-1 flex-col p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -558,9 +569,24 @@ function Products() {
                       <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                         {item.subtitle}
                       </p>
+                      <p className="mt-3 text-xs font-semibold text-secondary">
+                        {item.netContent || getDefaultProductNetContent(item.name, item.category)}
+                      </p>
                       <div className="mt-4 border-t border-border pt-4">
-                        <p className="text-xs text-muted-foreground">MRP</p>
-                        <p className="mt-0.5 text-xl font-bold text-primary">{money(item.price)}</p>
+                        <div className="flex items-end gap-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">MRP</p>
+                            <p className="mt-0.5 text-sm font-semibold text-muted-foreground line-through">
+                              {money(item.price)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-primary">DP Price</p>
+                            <p className="mt-0.5 text-xl font-bold text-primary">
+                              {money(item.dpPrice)}
+                            </p>
+                          </div>
+                        </div>
                         <p className="mt-1 text-[11px] text-muted-foreground">
                           Inclusive of all taxes
                         </p>

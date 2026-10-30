@@ -97,6 +97,7 @@ export type Product = {
   badge?: string;
   price?: number | null;
   dpPrice?: number | null;
+  netContent?: string | null;
   stockQuantity?: number | null;
   isServiceable?: boolean;
   imageUrl?: string | null;
@@ -124,6 +125,32 @@ export const catalogImageByCategory: Record<string, string> = {
 export function getCatalogImageForCategory(category?: string | null) {
   if (!category) return null;
   return catalogImageByCategory[category.trim()] || null;
+}
+
+export function getDefaultProductNetContent(name?: string | null, category?: string | null) {
+  if (name?.trim().toLowerCase() === "anmol ratan juice") return "500 ml per bottle";
+
+  const normalizedCategory = category?.trim() || "";
+  const quantityByCategory: Record<string, string> = {
+    "Mobiles & Computers": "1 piece",
+    "TV, Appliances & Electronics": "1 unit",
+    "Men's Fashion": "1 piece",
+    "Women's Fashion": "1 piece",
+    Footwear: "1 pair",
+    "Toys, Baby Products & Kids' Fashion": "1 set",
+    "Car, Motorbike & Industrial": "1 piece",
+    Books: "1 book",
+    "Movies, Music & Video Games": "1 unit",
+    "Ayurvedic & Herbal": "1 pack",
+    "Wellness & Nutrition": "1 pack",
+    "Personal Care": "1 set",
+    "Home, Kitchen & Pets": "1 set",
+    "Beauty, Health & Grocery": "1 kit",
+    "Sports, Fitness, Bags & Luggage": "1 set",
+    "Agriculture & Garden": "1 kit",
+  };
+
+  return quantityByCategory[normalizedCategory] || "1 unit";
 }
 
 export const catalogDemoProducts: Product[] = [
@@ -316,6 +343,7 @@ export const catalogDemoProducts: Product[] = [
   },
 ].map((product) => ({
   ...product,
+  netContent: getDefaultProductNetContent(product.name, product.category),
   imageUrl: getCatalogImageForCategory(product.category),
 }));
 
@@ -335,6 +363,8 @@ export const products: Product[] = [
     ],
     badge: "Signature Product",
     price: 1200,
+    dpPrice: 700,
+    netContent: "500 ml per bottle",
   },
 ];
 
@@ -426,7 +456,7 @@ export const planLevels = [
 export const directReferralPlans = [
   { packageCount: 1, packageValue: 3500 },
   { packageCount: 2, packageValue: 7000 },
-  { packageCount: 3, packageValue: 10500 },
+  { packageCount: 3, packageValue: 9500 },
   { packageCount: 4, packageValue: 14000 },
 ] as const;
 

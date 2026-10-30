@@ -13,7 +13,12 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
-import { catalogDemoProducts, getCatalogImageForCategory, products } from "@/data/site";
+import {
+  catalogDemoProducts,
+  getCatalogImageForCategory,
+  getDefaultProductNetContent,
+  products,
+} from "@/data/site";
 import { getPublicProducts, type PublicProduct } from "@/lib/cms";
 import {
   addToCustomerCart,
@@ -26,7 +31,7 @@ import {
 const productPackages = [
   { id: "pack-1", label: "Package 1", units: 5, price: 3500 },
   { id: "pack-2", label: "Package 2", units: 10, price: 7000 },
-  { id: "pack-3", label: "Package 3", units: 15, price: 10500 },
+  { id: "pack-3", label: "Package 3", units: 15, price: 9500 },
   { id: "pack-4", label: "Package 4", units: 20, price: 14000 },
 ];
 
@@ -126,6 +131,14 @@ function ProductDetail() {
                     : mapped.name === "Anmol Ratan Juice"
                       ? ANMOL_RATAN_UNIT_PRICE
                       : null,
+                dpPrice:
+                  mapped.dpPrice == null
+                    ? mapped.name === "Anmol Ratan Juice"
+                      ? 700
+                      : null
+                    : Number(mapped.dpPrice),
+                netContent:
+                  mapped.netContent || getDefaultProductNetContent(mapped.name, mapped.category),
                 badge: mapped.name === "Anmol Ratan Juice" ? "Signature Product" : "RDG Product",
                 imageUrl: mapped.imageUrl || getCatalogImageForCategory(mapped.category),
               }
@@ -139,6 +152,15 @@ function ProductDetail() {
                       : fallback.name === "Anmol Ratan Juice"
                         ? ANMOL_RATAN_UNIT_PRICE
                         : null,
+                  dpPrice:
+                    fallback.dpPrice == null
+                      ? fallback.name === "Anmol Ratan Juice"
+                        ? 700
+                        : null
+                      : Number(fallback.dpPrice),
+                  netContent:
+                    fallback.netContent ||
+                    getDefaultProductNetContent(fallback.name, fallback.category),
                   imageUrl: getCatalogImageForCategory(fallback.category),
                   id: fallback.id,
                 }
@@ -329,7 +351,11 @@ function ProductDetail() {
         <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.02fr)_minmax(26rem,0.98fr)] lg:items-start">
           <div className="rounded-2xl border border-border bg-white p-3 shadow-soft sm:p-5">
             <div className="overflow-hidden rounded-xl border border-border bg-[#f4f8ec]">
-              <ProductVisual imageUrl={product.imageUrl} productName={product.name} />
+              <ProductVisual
+                imageUrl={product.imageUrl}
+                productName={product.name}
+                category={product.category}
+              />
             </div>
             <div className="mt-3 flex gap-3">
               <button
@@ -337,7 +363,12 @@ function ProductDetail() {
                 className="h-20 w-20 overflow-hidden rounded-xl border-2 border-primary bg-[#f4f8ec] p-1"
                 aria-label={`Preview ${product.name}`}
               >
-                <ProductVisual compact imageUrl={product.imageUrl} productName={product.name} />
+                <ProductVisual
+                  compact
+                  imageUrl={product.imageUrl}
+                  productName={product.name}
+                  category={product.category}
+                />
               </button>
               <div className="flex items-center text-xs text-muted-foreground">
                 Product image shown for illustration. Check the current pack for final details.
@@ -374,7 +405,9 @@ function ProductDetail() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">MRP</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">{money(unitPrice)}</p>
+                  <p className="mt-1 text-xl font-semibold text-muted-foreground line-through">
+                    {money(unitPrice)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">DP Price</p>
@@ -405,7 +438,10 @@ function ProductDetail() {
                 </span>
                 <span>
                   <strong className="font-semibold text-foreground">Net content:</strong>{" "}
-                  {isPackageProduct ? `${selectedPackage.units} bottles` : "1 unit"}
+                  {isPackageProduct
+                    ? `${product.netContent || "500 ml per bottle"} · ${selectedPackage.units} bottles`
+                    : product.netContent ||
+                      getDefaultProductNetContent(product.name, product.category)}
                 </span>
               </div>
             </div>

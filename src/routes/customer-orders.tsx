@@ -1,6 +1,8 @@
 import { ArrowRight, PackageCheck, Truck, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ChangePasswordForm } from "@/components/shared/ChangePasswordForm";
 import {
+  changeCustomerPassword,
   getCustomerMe,
   getCustomerOrder,
   getCustomerOrders,
@@ -104,6 +106,9 @@ function CustomerOrders() {
             {error}
           </p>
         )}
+        <div className="mt-8">
+          <ChangePasswordForm onSubmit={changeCustomerPassword} />
+        </div>
         {!orders.length ? (
           <div className="mt-10 rounded-[2rem] border border-border bg-card p-10 text-center shadow-soft">
             <PackageCheck className="mx-auto h-10 w-10 text-muted-foreground" />

@@ -2,33 +2,48 @@ import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import bottleImage from "@/assets/optimized/anmol-ratan-juice-bottle.webp";
 import bottleThumbnailImage from "@/assets/optimized/anmol-ratan-juice-bottle-thumb.webp";
-import type { Product } from "@/data/site";
+import { getCatalogImageForCategory, getDefaultProductNetContent, type Product } from "@/data/site";
 
-function resolveProductImage(imageUrl?: string | null, compact = false) {
-  const isCatalogAsset =
-    imageUrl?.startsWith("/src/assets/catalog/") ||
-    imageUrl?.startsWith("/src/assets/optimized/catalog");
-  return imageUrl && (!imageUrl.startsWith("/src/") || isCatalogAsset)
+function resolveProductImage(
+  imageUrl?: string | null,
+  compact = false,
+  productName = "",
+  category?: string | null,
+) {
+  const isAnmolRatan = productName.trim().toLowerCase() === "anmol ratan juice";
+  const categoryImage = getCatalogImageForCategory(category);
+  const fallback = categoryImage || (compact ? bottleThumbnailImage : bottleImage);
+
+  // Older CMS records stored Vite source paths such as /src/assets/..., which are
+  // not public URLs after a production build. Use the bundled category asset instead.
+  return imageUrl && !imageUrl.startsWith("/src/")
     ? imageUrl
-    : compact
-      ? bottleThumbnailImage
-      : bottleImage;
+    : isAnmolRatan
+      ? compact
+        ? bottleThumbnailImage
+        : bottleImage
+      : fallback;
 }
 
 export function ProductVisual({
   compact = false,
   imageUrl,
   productName = "Anmol Ratan Juice",
+  category,
 }: {
   compact?: boolean;
   imageUrl?: string | null;
   productName?: string;
+  category?: string | null;
 }) {
-  const [image, setImage] = useState(() => resolveProductImage(imageUrl, compact));
+  const fallbackImage = resolveProductImage(undefined, compact, productName, category);
+  const [image, setImage] = useState(() =>
+    resolveProductImage(imageUrl, compact, productName, category),
+  );
 
   useEffect(() => {
-    setImage(resolveProductImage(imageUrl, compact));
-  }, [compact, imageUrl]);
+    setImage(resolveProductImage(imageUrl, compact, productName, category));
+  }, [category, compact, imageUrl, productName]);
 
   return (
     <div
@@ -45,7 +60,7 @@ export function ProductVisual({
         loading={compact ? "lazy" : "eager"}
         decoding="async"
         fetchPriority={compact ? "low" : "high"}
-        onError={() => setImage(compact ? bottleThumbnailImage : bottleImage)}
+        onError={() => setImage(fallbackImage)}
         className={`relative max-h-full w-auto object-contain drop-shadow-2xl ${compact ? "h-52" : "h-[29rem]"}`}
       />
     </div>
@@ -55,7 +70,12 @@ export function ProductVisual({
 export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="card-sheen group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft">
-      <ProductVisual compact imageUrl={product.imageUrl} productName={product.name} />
+      <ProductVisual
+        compact
+        imageUrl={product.imageUrl}
+        productName={product.name}
+        category={product.category}
+      />
       <div className="flex flex-1 flex-col p-6">
         <span className="bg-gold-grad inline-flex rounded-full px-3 py-1 text-[11px] font-semibold text-gold-foreground">
           {product.badge}
@@ -65,6 +85,9 @@ export function ProductCard({ product }: { product: Product }) {
         </p>
         <h3 className="mt-2 font-display text-xl font-semibold text-foreground">{product.name}</h3>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{product.subtitle}</p>
+        <p className="mt-3 text-xs font-semibold text-secondary">
+          {product.netContent || getDefaultProductNetContent(product.name, product.category)}
+        </p>
         <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
           {product.highlights.slice(0, 2).map((highlight) => (
             <li key={highlight} className="flex gap-2">
