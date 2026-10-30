@@ -348,17 +348,7 @@ function ProductDetail() {
   return (
     <section className="bg-[#fafbf7] py-8 sm:py-12">
       <div className="container-x">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <a href="/products" className="font-semibold text-primary hover:underline">
-            Products
-          </a>
-          <span>/</span>
-          <span>{product.category || "RDG product"}</span>
-          <span>/</span>
-          <span className="truncate text-foreground">{product.name}</span>
-        </div>
-
-        <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.02fr)_minmax(26rem,0.98fr)] lg:items-start">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.02fr)_minmax(26rem,0.98fr)] lg:items-start">
           <div className="rounded-2xl border border-border bg-white p-3 shadow-soft sm:p-5">
             <div className="overflow-hidden rounded-xl border border-border bg-[#f4f8ec]">
               <ProductVisual
