@@ -375,6 +375,7 @@ function ProductDetail() {
               >
                 <ProductVisual
                   compact
+                  thumbnail
                   imageUrl={product.imageUrl}
                   productName={product.name}
                   category={product.category}

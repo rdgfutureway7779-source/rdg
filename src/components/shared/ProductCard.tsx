@@ -27,11 +27,13 @@ function resolveProductImage(
 
 export function ProductVisual({
   compact = false,
+  thumbnail = false,
   imageUrl,
   productName = "Anmol Ratan Juice",
   category,
 }: {
   compact?: boolean;
+  thumbnail?: boolean;
   imageUrl?: string | null;
   productName?: string;
   category?: string | null;
@@ -47,7 +49,7 @@ export function ProductVisual({
 
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#f7fbe9] via-[#fff7d6] to-[#d7eff7] ${compact ? "h-56 min-h-0" : "min-h-[30rem]"}`}
+      className={`relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#f7fbe9] via-[#fff7d6] to-[#d7eff7] ${thumbnail ? "h-16 min-h-0" : compact ? "h-56 min-h-0" : "min-h-[30rem]"}`}
       aria-label={`${productName} product image`}
     >
       <div className="absolute -top-12 -right-10 h-44 w-44 rounded-full bg-[#a8d66d]/40 blur-3xl" />
@@ -55,13 +57,13 @@ export function ProductVisual({
       <img
         src={image}
         alt={`${productName} product image`}
-        width={compact ? 208 : 512}
-        height={compact ? 312 : 768}
+        width={thumbnail ? 64 : compact ? 208 : 512}
+        height={thumbnail ? 96 : compact ? 312 : 768}
         loading={compact ? "lazy" : "eager"}
         decoding="async"
         fetchPriority={compact ? "low" : "high"}
         onError={() => setImage(fallbackImage)}
-        className={`relative max-h-full w-auto object-contain drop-shadow-2xl ${compact ? "h-52" : "h-[29rem]"}`}
+        className={`relative max-h-full w-auto object-contain drop-shadow-2xl ${thumbnail ? "h-16" : compact ? "h-52" : "h-[29rem]"}`}
       />
     </div>
   );
