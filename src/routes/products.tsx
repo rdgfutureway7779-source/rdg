@@ -17,7 +17,6 @@ import {
   Music,
   Search,
   Shirt,
-  ShoppingCart,
   SlidersHorizontal,
   Smartphone,
   Sparkles,
@@ -351,28 +350,8 @@ function Products() {
   return (
     <section className="bg-[#fafbf7] py-8 sm:py-12">
       <div className="container-x products-page-container">
-        <div className="rounded-2xl border border-primary/10 bg-[linear-gradient(120deg,#f1f8ec_0%,#fffdf5_52%,#eef7f9_100%)] px-6 py-8 shadow-soft sm:px-10 sm:py-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <h1 className="font-display text-4xl leading-tight font-bold text-primary-dark sm:text-5xl">
-                Find exactly what you need.
-              </h1>
-              <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Explore the RDG collection by category, compare product information and view current
-                prices before adding a product to your customer cart.
-              </p>
-            </div>
-            <a
-              href="/cart"
-              className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-white/80 px-5 py-3 text-sm font-semibold text-primary transition-colors hover:bg-white"
-            >
-              <ShoppingCart className="h-4 w-4" /> View cart <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-        </div>
-
         <section
-          className="product-banner-carousel mt-7"
+          className="product-banner-carousel"
           aria-label="RDG product promotions"
           onMouseEnter={() => setBannerPaused(true)}
           onMouseLeave={() => setBannerPaused(false)}
