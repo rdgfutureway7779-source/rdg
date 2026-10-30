@@ -105,6 +105,25 @@ export type Product = {
   imageUrl?: string | null;
 };
 
+export const anmolRatanJuiceDescription =
+  "Anmol Ratan Juice is a 500 ml herbal and mixed berry juice blend. The product label presents it as 100% natural, vegetarian, with no added sugar, no artificial colour and no preservatives. Ingredients: herbal and mixed berry juice blend; refer to the current pack for the complete ingredient composition. The label highlights everyday wellness support for immunity, digestion, liver wellness, heart health, skin radiance, energy, antioxidant support, weight balance, mental wellness, and healthy bones and joints. These are label-based product claims; this product is not a medicine and should not replace professional medical advice.";
+
+export const anmolRatanJuiceHighlights = [
+  "Ingredients: herbal and mixed berry juice blend; refer to the current pack for the complete ingredient list",
+  "500 ml per bottle",
+  "100% natural positioning shown on the product label",
+  "No added sugar",
+  "No artificial colour",
+  "No preservatives",
+  "Vegetarian product",
+  "Label-listed immunity support",
+  "Supports digestive comfort and everyday gut wellness",
+  "Supports liver wellness and antioxidant protection",
+  "Supports heart health and healthy cholesterol management",
+  "Supports skin radiance, energy and freshness",
+  "Supports weight balance, mental wellness, and healthy bones and joints",
+];
+
 export const catalogImageByCategory: Record<string, string> = {
   "Mobiles & Computers": mobilesComputersImage,
   "TV, Appliances & Electronics": tvElectronicsImage,
@@ -355,14 +374,8 @@ export const products: Product[] = [
     name: "Anmol Ratan Juice",
     category: "Herbal & Mixed Berry Juice",
     subtitle: "A refreshing herbal wellness drink with a mixed berry blend.",
-    description:
-      "Anmol Ratan Juice brings together a bright mixed-berry taste and a herbal wellness positioning for everyday family routines. The product label presents it as a natural choice for people who want a simple, fruit-forward drink as part of a balanced lifestyle.",
-    highlights: [
-      "100% natural positioning shown on the product label",
-      "Herbal and mixed berry blend",
-      "Rich berry flavour with a refreshing finish",
-      "Designed for everyday family wellness routines",
-    ],
+    description: anmolRatanJuiceDescription,
+    highlights: anmolRatanJuiceHighlights,
     badge: "Signature Product",
     price: 1200,
     dpPrice: 700,

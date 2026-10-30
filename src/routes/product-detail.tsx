@@ -14,6 +14,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
 import {
+  anmolRatanJuiceDescription,
+  anmolRatanJuiceHighlights,
   catalogDemoProducts,
   getCatalogImageForCategory,
   getDefaultProductNetContent,
@@ -125,6 +127,14 @@ function ProductDetail() {
           mapped
             ? {
                 ...mapped,
+                description:
+                  mapped.name === "Anmol Ratan Juice"
+                    ? anmolRatanJuiceDescription
+                    : mapped.description || "",
+                highlights:
+                  mapped.name === "Anmol Ratan Juice"
+                    ? anmolRatanJuiceHighlights
+                    : mapped.highlights || [],
                 price:
                   Number.isFinite(mappedPrice) && mappedPrice > 0
                     ? mappedPrice
