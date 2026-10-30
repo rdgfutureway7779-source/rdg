@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Building2, Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import contactBreadcrumbImage from "@/assets/contact.png";
 import { LocationMap } from "@/components/shared/LocationMap";
 import { company } from "@/data/site";
@@ -42,7 +42,6 @@ function Contact() {
               { icon: MapPin, label: "Head Office", value: company.address },
               { icon: Phone, label: "Phone", value: company.phone },
               { icon: Mail, label: "Email", value: company.email },
-              { icon: Building2, label: "Branch Offices", value: company.branches.join(" • ") },
             ].map((c) => (
               <div
                 key={c.label}
@@ -115,7 +114,9 @@ function Contact() {
                 placeholder="Mobile number"
                 aria-label="Mobile number"
               />
-              {errors.phone && <span className="text-xs text-destructive">{errors.phone.message}</span>}
+              {errors.phone && (
+                <span className="text-xs text-destructive">{errors.phone.message}</span>
+              )}
               <textarea
                 {...register("message", { required: true })}
                 rows={5}
