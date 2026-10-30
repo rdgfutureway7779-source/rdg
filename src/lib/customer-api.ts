@@ -106,6 +106,14 @@ export async function loginCustomer(email: string, password: string) {
   return data.customer;
 }
 
+export async function resetCustomerPassword(email: string, newPassword: string) {
+  await customerApi("/api/customer/auth/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, newPassword }),
+  });
+}
+
 export async function registerCustomer(payload: {
   name: string;
   email: string;

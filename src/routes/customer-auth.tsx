@@ -1,16 +1,18 @@
-import { ArrowRight, LockKeyhole, UserRound } from "lucide-react";
+import { ArrowRight, KeyRound, LockKeyhole, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { PasswordInput } from "@/components/shared/PasswordInput";
-import { loginCustomer, registerCustomer } from "@/lib/customer-api";
+import { loginCustomer, registerCustomer, resetCustomerPassword } from "@/lib/customer-api";
 import { isOptionalMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 
 function CustomerAuth() {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
   function redirectAfterAuth() {
@@ -21,6 +23,7 @@ function CustomerAuth() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
+    setNotice("");
     setLoading(true);
     try {
       if (mode === "register") {
@@ -30,6 +33,18 @@ function CustomerAuth() {
           return;
         }
         await registerCustomer({ name, email, phone, password });
+      } else if (mode === "forgot") {
+        if (password !== confirmPassword) {
+          setError("New password and confirmation do not match.");
+          setLoading(false);
+          return;
+        }
+        await resetCustomerPassword(email, password);
+        setMode("login");
+        setPassword("");
+        setConfirmPassword("");
+        setNotice("Password reset successfully. You can now log in.");
+        return;
       } else {
         await loginCustomer(email, password);
       }
@@ -74,6 +89,7 @@ function CustomerAuth() {
                 onClick={() => {
                   setMode(item);
                   setError("");
+                  setNotice("");
                 }}
                 className={`flex-1 rounded-full px-4 py-2.5 text-sm font-semibold capitalize transition-colors ${
                   mode === item ? "bg-primary text-primary-foreground" : "text-muted-foreground"
@@ -87,12 +103,18 @@ function CustomerAuth() {
             Customer access
           </p>
           <h2 className="mt-2 font-display text-3xl font-bold">
-            {mode === "login" ? "Welcome back" : "Create your account"}
+            {mode === "login"
+              ? "Welcome back"
+              : mode === "forgot"
+                ? "Reset your password"
+                : "Create your account"}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {mode === "login"
               ? "Login to view your personal cart."
-              : "Register once to save products to your own cart."}
+              : mode === "forgot"
+                ? "Enter your registered email and create a new password. No OTP is required."
+                : "Register once to save products to your own cart."}
           </p>
           <form onSubmit={submit} className="mt-7 grid gap-4">
             {mode === "register" && (
@@ -126,10 +148,41 @@ function CustomerAuth() {
             <PasswordInput
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password (8+ characters)"
+              placeholder={
+                mode === "forgot" ? "New password (8+ characters)" : "Password (8+ characters)"
+              }
               minLength={8}
+              autoComplete={mode === "forgot" ? "new-password" : "current-password"}
               required
             />
+            {mode === "forgot" && (
+              <PasswordInput
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="Confirm new password"
+                minLength={8}
+                autoComplete="new-password"
+                required
+              />
+            )}
+            {mode === "login" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("forgot");
+                  setError("");
+                  setNotice("");
+                }}
+                className="-mt-1 justify-self-end text-sm font-semibold text-primary"
+              >
+                Forgot password?
+              </button>
+            )}
+            {notice && (
+              <p className="rounded-2xl bg-secondary/10 px-4 py-3 text-sm text-secondary">
+                {notice}
+              </p>
+            )}
             {error && (
               <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {error}
@@ -144,7 +197,9 @@ function CustomerAuth() {
                 ? "Please wait…"
                 : mode === "login"
                   ? "Login to shop"
-                  : "Create customer account"}
+                  : mode === "forgot"
+                    ? "Reset password"
+                    : "Create customer account"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>

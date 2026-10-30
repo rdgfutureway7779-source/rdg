@@ -108,6 +108,14 @@ export async function loginDistributor(username: string, password: string) {
   return data.distributor;
 }
 
+export async function resetDistributorPassword(identifier: string, newPassword: string) {
+  await distributorApi("/api/distributor/auth/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier, newPassword }),
+  });
+}
+
 export async function logoutDistributor() {
   await distributorApi("/api/distributor/auth/logout", { method: "POST" });
 }

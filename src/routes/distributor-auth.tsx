@@ -6,6 +6,7 @@ import {
   createDistributorPaymentOrder,
   loginDistributor,
   registerDistributor,
+  resetDistributorPassword,
 } from "@/lib/distributor-api";
 import { isValidMobileNumber, MOBILE_NUMBER_ERROR } from "@/lib/mobile-validation";
 import { loadRazorpayCheckout, type RazorpayCheckoutResponse } from "@/lib/razorpay";
@@ -13,7 +14,7 @@ import { loadRazorpayCheckout, type RazorpayCheckoutResponse } from "@/lib/razor
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
 function DistributorAuth() {
-  const [mode, setMode] = useState<"login" | "register">("register");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("register");
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -25,11 +26,12 @@ function DistributorAuth() {
   const [sponsorCode, setSponsorCode] = useState(sponsorFromInvite);
   const [packageValue, setPackageValue] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function switchMode(nextMode: "login" | "register") {
+  function switchMode(nextMode: "login" | "register" | "forgot") {
     setMode(nextMode);
     setError("");
     setNotice("");
@@ -79,6 +81,17 @@ function DistributorAuth() {
         });
         checkout.open();
         paymentDialogOpened = true;
+      } else if (mode === "forgot") {
+        if (password !== confirmPassword) {
+          setError("New password and confirmation do not match.");
+          setLoading(false);
+          return;
+        }
+        await resetDistributorPassword(username, password);
+        setMode("login");
+        setPassword("");
+        setConfirmPassword("");
+        setNotice("Password reset successfully. You can now log in.");
       } else {
         await loginDistributor(username, password);
         window.location.href = "/distributor/dashboard";
@@ -171,12 +184,18 @@ function DistributorAuth() {
             Distributor account
           </p>
           <h2 className="mt-2 font-display text-3xl font-bold">
-            {mode === "register" ? "Create your account" : "Welcome back"}
+            {mode === "register"
+              ? "Create your account"
+              : mode === "forgot"
+                ? "Reset your password"
+                : "Welcome back"}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {mode === "register"
               ? "Register once to receive your distributor ID and secure login access."
-              : "Login with the username and password you created."}
+              : mode === "forgot"
+                ? "Enter your username or registered email and create a new password. No OTP is required."
+                : "Login with the username and password you created."}
           </p>
           <p className="mt-3 hidden rounded-2xl bg-primary/5 px-4 py-3 text-sm font-semibold text-primary">
             Annual distributor membership: ₹599 per year, renewed every year. Product packages are A
@@ -261,14 +280,14 @@ function DistributorAuth() {
               </>
             )}
             <label className="block text-sm font-semibold text-foreground">
-              Username (not email)
+              {mode === "forgot" ? "Username or registered email" : "Username (not email)"}
               <input
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 type="text"
                 name="distributor-username"
                 className="field"
-                placeholder="Choose a username"
+                placeholder={mode === "forgot" ? "Username or email address" : "Choose a username"}
                 autoComplete={mode === "register" ? "new-password" : "username"}
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -285,11 +304,34 @@ function DistributorAuth() {
             <PasswordInput
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password (8+ characters)"
-              autoComplete={mode === "register" ? "new-password" : "current-password"}
+              placeholder={
+                mode === "forgot" ? "New password (8+ characters)" : "Password (8+ characters)"
+              }
+              autoComplete={
+                mode === "register" || mode === "forgot" ? "new-password" : "current-password"
+              }
               minLength={8}
               required
             />
+            {mode === "forgot" && (
+              <PasswordInput
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="Confirm new password"
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            )}
+            {mode === "login" && (
+              <button
+                type="button"
+                onClick={() => switchMode("forgot")}
+                className="-mt-1 justify-self-end text-sm font-semibold text-primary"
+              >
+                Forgot password?
+              </button>
+            )}
             {notice && (
               <p className="rounded-2xl bg-secondary/10 px-4 py-3 text-sm text-secondary">
                 {notice}
@@ -312,7 +354,9 @@ function DistributorAuth() {
                   : "Please wait…"
                 : mode === "register"
                   ? "Pay and create account"
-                  : "Login"}
+                  : mode === "forgot"
+                    ? "Reset password"
+                    : "Login"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>

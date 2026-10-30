@@ -285,6 +285,10 @@ const customerLoginSchema = z.object({
   email: z.string().email().max(190),
   password: z.string().min(1).max(120),
 });
+const customerResetPasswordSchema = z.object({
+  email: z.string().email().max(190),
+  newPassword: z.string().min(8).max(120),
+});
 const passwordChangeSchema = z.object({
   currentPassword: z.string().min(1).max(120),
   newPassword: z.string().min(8).max(120),
@@ -369,6 +373,10 @@ const distributorRegisterSchema = z
 const distributorLoginSchema = z.object({
   username: z.string().trim().min(1).max(80),
   password: z.string().min(1).max(120),
+});
+const distributorResetPasswordSchema = z.object({
+  identifier: z.string().trim().min(1).max(190),
+  newPassword: z.string().min(8).max(120),
 });
 const pageSchema = z.object({
   title: z.string().trim().min(2).max(255),
@@ -1048,6 +1056,24 @@ app.post(
 );
 
 app.post(
+  "/api/customer/auth/reset-password",
+  loginLimiter,
+  asyncRoute(async (req, res) => {
+    const input = customerResetPasswordSchema.safeParse(req.body);
+    if (!input.success) return fail(res, "Enter a valid email and a password of 8+ characters.", 422);
+    const email = input.data.email.toLowerCase();
+    const [[customer]] = await query("SELECT id FROM customers WHERE email = ? LIMIT 1", [email]);
+    if (!customer) return fail(res, "No customer account was found with that email.", 404);
+    const passwordHash = await bcrypt.hash(input.data.newPassword, 12);
+    await query("UPDATE customers SET password_hash = ? WHERE id = ?", [
+      passwordHash,
+      customer.id,
+    ]);
+    return ok(res, { reset: true });
+  }),
+);
+
+app.post(
   "/api/customer/auth/logout",
   asyncRoute(async (_req, res) => {
     res.clearCookie("rdg_customer_token");
@@ -1327,6 +1353,31 @@ app.post(
     await query("UPDATE distributor_accounts SET last_login = NOW() WHERE id = ?", [account.id]);
     setDistributorCookie(res, token);
     return ok(res, { distributor: distributorProfile(distributor) });
+  }),
+);
+
+app.post(
+  "/api/distributor/auth/reset-password",
+  loginLimiter,
+  asyncRoute(async (req, res) => {
+    const input = distributorResetPasswordSchema.safeParse(req.body);
+    if (!input.success) return fail(res, "Enter your username or email and a password of 8+ characters.", 422);
+    const identifier = input.data.identifier.toLowerCase();
+    const [[account]] = await query(
+      `SELECT a.id
+       FROM distributor_accounts a
+       INNER JOIN distributors d ON d.id = a.distributor_id
+       WHERE a.username = ? OR LOWER(d.email) = ?
+       LIMIT 1`,
+      [identifier, identifier],
+    );
+    if (!account) return fail(res, "No distributor account was found with that username or email.", 404);
+    const passwordHash = await bcrypt.hash(input.data.newPassword, 12);
+    await query("UPDATE distributor_accounts SET password_hash = ? WHERE id = ?", [
+      passwordHash,
+      account.id,
+    ]);
+    return ok(res, { reset: true });
   }),
 );
 
