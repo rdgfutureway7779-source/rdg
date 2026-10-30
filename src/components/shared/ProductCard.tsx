@@ -9,10 +9,13 @@ function resolveProductImage(
   compact = false,
   productName = "",
   category?: string | null,
+  thumbnail = false,
 ) {
   const isAnmolRatan = productName.trim().toLowerCase() === "anmol ratan juice";
   const categoryImage = getCatalogImageForCategory(category);
   const fallback = categoryImage || (compact ? bottleThumbnailImage : bottleImage);
+
+  if (isAnmolRatan && thumbnail) return bottleThumbnailImage;
 
   // Older CMS records stored Vite source paths such as /src/assets/..., which are
   // not public URLs after a production build. Use the bundled category asset instead.
@@ -38,14 +41,14 @@ export function ProductVisual({
   productName?: string;
   category?: string | null;
 }) {
-  const fallbackImage = resolveProductImage(undefined, compact, productName, category);
+  const fallbackImage = resolveProductImage(undefined, compact, productName, category, thumbnail);
   const [image, setImage] = useState(() =>
-    resolveProductImage(imageUrl, compact, productName, category),
+    resolveProductImage(imageUrl, compact, productName, category, thumbnail),
   );
 
   useEffect(() => {
-    setImage(resolveProductImage(imageUrl, compact, productName, category));
-  }, [category, compact, imageUrl, productName]);
+    setImage(resolveProductImage(imageUrl, compact, productName, category, thumbnail));
+  }, [category, compact, imageUrl, productName, thumbnail]);
 
   return (
     <div
