@@ -23,10 +23,11 @@ export const company = {
   secondaryPhone: "+91 79729 73775",
   email: "rdgfutureway7779@gmail.com",
   website: "rdgfutureway.com",
-  address: "RDG Future Way Pvt. Ltd. • 20°18′14.0″N, 75°39′00.3″E, India",
+  address:
+    "S. No. 5, Plot No. 519, Jainoddin Colony, Sillod, Chhatrapati Sambhajinagar (Aurangabad), Maharashtra – 431112, India",
   mapEmbedUrl:
     "https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3741.937335410993!2d75.64823667523703!3d20.302860781170924!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjDCsDE4JzEwLjMiTiA3NcKwMzknMDIuOSJF!5e0!3m2!1sen!2sin!4v1793378335781!5m2!1sen!2sin",
-  mapUrl: "https://www.google.com/maps/search/?api=1&query=20.303891%2C75.647509",
+  mapUrl: "https://www.google.com/maps/search/?api=1&query=20.302860781170924%2C75.64823667523703",
   branches: ["Bhopal", "Jaipur", "Lucknow", "Nagpur", "Patna"],
 };
 
