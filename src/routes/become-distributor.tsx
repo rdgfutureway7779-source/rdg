@@ -16,7 +16,7 @@ const money = (value: number) =>
 
 const title = "Become a Distributor — RDG Future Way";
 const description =
-  "Join RDG Future Way as a distributor with a ₹599 annual membership. Renew every year to keep your account active and access wholesale pricing, training support and the generation income plan.";
+  "Join RDG Future Way with a free distributor account. There is no annual subscription fee; product package purchases are handled separately for distributor access.";
 
 type FormValues = {
   fullName: string;
@@ -202,7 +202,7 @@ function BecomeDistributor() {
         <div className="container-x grid gap-10 lg:grid-cols-[1fr_1.1fr]">
           <div className="space-y-4">
             {[
-              "₹599 annual distributor membership; renews every year",
+              "Free distributor account with no annual subscription fee",
               "Distributor support for Anmol Ratan Juice",
               "Monthly bonus payouts by the 10th",
               "Free access to the RDG Training Academy",

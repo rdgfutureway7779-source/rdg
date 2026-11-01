@@ -288,7 +288,7 @@ CREATE TABLE IF NOT EXISTS distributor_accounts (
 CREATE TABLE IF NOT EXISTS distributor_memberships (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   distributor_id BIGINT UNSIGNED NOT NULL,
-  amount DECIMAL(10,2) NOT NULL DEFAULT 599,
+  amount DECIMAL(10,2) NOT NULL DEFAULT 0,
   status ENUM('pending', 'active', 'expired', 'cancelled') NOT NULL DEFAULT 'pending',
   payment_status ENUM('pending', 'paid', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
   payment_method VARCHAR(60) NULL,

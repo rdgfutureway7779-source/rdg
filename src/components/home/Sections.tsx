@@ -478,7 +478,7 @@ export function CTABand() {
         <div className="bg-brand relative overflow-hidden rounded-[2.5rem] px-8 py-16 text-center text-primary-foreground shadow-lift md:px-16">
           <div className="bg-gold-grad animate-blob absolute -top-20 -right-16 h-72 w-72 rounded-full opacity-30 blur-3xl" />
           <h2 className="relative mx-auto max-w-2xl text-3xl font-bold md:text-4xl">
-            Start your RDG journey today — ₹599 annual distributor membership
+            Start your RDG journey today — free distributor account
           </h2>
           <p className="relative mx-auto mt-4 max-w-xl text-primary-foreground/80">
             Join 5,000+ distributors building income with a product their families can enjoy.

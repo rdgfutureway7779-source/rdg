@@ -554,18 +554,28 @@ function Products() {
                       <div className="mt-4 border-t border-border pt-4">
                         <div className="flex items-end gap-3">
                           <div>
-                            <p className="text-xs text-muted-foreground">MRP</p>
-                            <p className="mt-0.5 text-sm font-semibold text-muted-foreground line-through">
+                            <p className="text-xs text-muted-foreground">
+                              {item.name === "Anmol Ratan Juice" ? "MRP (1 bottle)" : "MRP"}
+                            </p>
+                            <p className="mt-0.5 text-sm font-semibold text-foreground">
                               {money(item.price)}
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-primary">DP Price</p>
+                            <p className="text-xs font-semibold text-primary">
+                              {item.name === "Anmol Ratan Juice" ? "Distributor price" : "DP Price"}
+                            </p>
                             <p className="mt-0.5 text-xl font-bold text-primary">
                               {money(item.dpPrice)}
                             </p>
                           </div>
                         </div>
+                        {item.name === "Anmol Ratan Juice" && (
+                          <p className="mt-2 text-[11px] font-medium text-secondary">
+                            ₹700 per bottle applies to package buyers only. Single-bottle price is
+                            ₹1,200.
+                          </p>
+                        )}
                         <p className="mt-1 text-[11px] text-muted-foreground">
                           Inclusive of all taxes
                         </p>

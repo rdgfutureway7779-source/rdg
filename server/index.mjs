@@ -252,7 +252,7 @@ function getIdLevelProgress(value) {
 }
 
 const idSchema = z.coerce.number().int().positive();
-const distributorMembershipAmount = 599;
+const distributorMembershipAmount = 0;
 const mobileNumberPattern = /^(?:\+91|91)?[6-9]\d{9}$/;
 const isValidMobileNumber = (value) =>
   mobileNumberPattern.test(String(value || "").replace(/[\s()-]/g, ""));

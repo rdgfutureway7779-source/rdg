@@ -405,14 +405,14 @@ function ProductDetail() {
             <div className="mt-6 border-y border-border py-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">MRP</p>
-                  <p className="mt-1 text-xl font-semibold text-muted-foreground line-through">
-                    {money(unitPrice)}
-                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground">MRP (1 bottle)</p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">{money(unitPrice)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Single-bottle price</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">DP Price</p>
+                  <p className="text-xs font-semibold text-primary">Distributor price</p>
                   <p className="mt-1 text-2xl font-bold text-primary">{money(dpPrice)}</p>
+                  <p className="mt-1 text-xs text-secondary">Package buyers only</p>
                 </div>
               </div>
               <p className="mt-3 text-xs font-medium text-secondary">Inclusive of all taxes</p>
@@ -449,9 +449,13 @@ function ProductDetail() {
 
             {isPackageProduct && (
               <div className="mt-6 rounded-xl border border-primary/15 bg-[#f5faee] p-4">
+                <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+                  A single bottle is ₹1,200. The ₹700 per-bottle distributor rate is available only
+                  when purchasing a package.
+                </p>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-foreground">
-                    Choose pack size
+                    Choose package size
                   </span>
                   <select
                     value={selectedPackageId}

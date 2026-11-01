@@ -505,7 +505,7 @@ export const whyChoose = [
 export const journey = [
   {
     step: "Join",
-    desc: "Register with a valid ID and pay the ₹599 annual distributor membership to start your RDG ID.",
+    desc: "Create a free distributor account, then purchase a product package to activate your RDG ID.",
   },
   { step: "Buy Products", desc: "Purchase at distributor price and build product experience." },
   { step: "Refer Members", desc: "Share products and enrol customers you already know." },
@@ -706,8 +706,8 @@ export const downloads = [
 
 export const faqs = [
   {
-    q: "What is the annual distributor subscription fee?",
-    a: "The distributor membership is ₹599 per year and renews annually. You can also purchase the product package you actually want, starting from ₹1,200. There is no separate franchise or security fee.",
+    q: "Is distributor registration free?",
+    a: "Yes. There is no annual distributor subscription fee. A product package purchase is still required to activate distributor access, and there is no separate franchise or security fee.",
   },
   {
     q: "How is the Generation Plan different from a binary plan?",

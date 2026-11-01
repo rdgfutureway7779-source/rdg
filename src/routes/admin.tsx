@@ -1703,19 +1703,6 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
       setError((e as Error).message);
     }
   }
-  async function renewMembership(item: RecordItem) {
-    if (!confirm(`Record ₹599 annual membership renewal for ${item.name}?`)) return;
-    try {
-      await api(`/api/admin/distributors/${item.id}/membership/renew`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentMethod: "admin_recorded" }),
-      });
-      await load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
   const teamMembers = (() => {
     if (!editing || !form.distributorCode) return [];
     const bySponsor = new Map<string, RecordItem[]>();
@@ -1938,9 +1925,7 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
               </p>
             </td>
             <td className="px-4 py-4">
-              <p className="font-semibold text-primary">
-                ₹{Number(item.membershipAmount || 599).toLocaleString("en-IN")} / year
-              </p>
+              <p className="font-semibold text-primary">Free distributor access</p>
               <div className="mt-1">
                 <StatusBadge status={item.membershipCurrentStatus || "not_started"} />
               </div>
@@ -1967,15 +1952,6 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             </td>
             <td className="px-4 py-4">
               <div className="flex flex-col items-start gap-2">
-                <button
-                  onClick={() => void renewMembership(item)}
-                  className="rounded-lg border border-secondary/30 px-2.5 py-1.5 text-[11px] font-semibold text-secondary hover:bg-secondary/10"
-                >
-                  {item.membershipPaymentStatus === "pending" &&
-                  item.membershipCurrentStatus === "active"
-                    ? "Mark paid ₹599"
-                    : "Renew ₹599"}
-                </button>
                 <RowActions onEdit={() => open(item)} onDelete={() => remove(item.id)} />
               </div>
             </td>

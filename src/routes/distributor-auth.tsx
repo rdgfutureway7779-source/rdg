@@ -197,14 +197,9 @@ function DistributorAuth() {
                 ? "Enter your username or registered email and create a new password. No OTP is required."
                 : "Login with the username and password you created."}
           </p>
-          <p className="mt-3 hidden rounded-2xl bg-primary/5 px-4 py-3 text-sm font-semibold text-primary">
-            Annual distributor membership: ₹599 per year, renewed every year. Product packages are A
-            A product package purchase is required before distributor access is activated.
-          </p>
-
           <p className="mt-3 rounded-2xl bg-primary/5 px-4 py-3 text-sm font-semibold text-primary">
-            Annual membership is ₹599 per year. A product package purchase is required before
-            distributor access is activated.
+            Distributor registration is free with no annual subscription fee. A product package
+            purchase is required before distributor access is activated.
           </p>
 
           <form onSubmit={submit} className="mt-7 grid gap-4">

@@ -366,6 +366,13 @@ export async function seedDatabase() {
     );
   }
 
+  await query(
+    "UPDATE products SET price = 1200, dp_price = 700, net_content = '500 ml per bottle' WHERE name = 'Anmol Ratan Juice'",
+  );
+  await query(
+    "UPDATE distributor_memberships SET amount = 0, payment_method = COALESCE(payment_method, 'free') WHERE amount > 0",
+  );
+
   const [existingProductCategories] = await query(
     "SELECT DISTINCT TRIM(category) AS name FROM products WHERE category IS NOT NULL AND TRIM(category) <> ''",
   );

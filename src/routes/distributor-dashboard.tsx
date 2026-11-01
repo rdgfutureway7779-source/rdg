@@ -175,8 +175,7 @@ function DistributorDashboard() {
             <p className="mt-1 text-sm text-primary">@{root.username}</p>
             <div className="mt-5 grid gap-3 text-sm text-muted-foreground">
               <p>
-                Membership:{" "}
-                <strong className="text-foreground">₹{root.membershipAmount || 599}</strong> / year
+                Distributor access: <strong className="text-foreground">Free</strong>
               </p>
               <p>
                 Status:{" "}
@@ -185,8 +184,7 @@ function DistributorDashboard() {
                 </strong>
               </p>
               <p>
-                Valid until:{" "}
-                <strong className="text-foreground">{formatDate(root.membershipExpiresAt)}</strong>
+                Annual subscription: <strong className="text-foreground">None</strong>
               </p>
               <p>
                 Your automatic Sponsor ID:{" "}
