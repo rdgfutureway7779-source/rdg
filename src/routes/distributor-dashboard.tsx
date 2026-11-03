@@ -1,5 +1,14 @@
-import { ArrowLeft, LogOut, Network, ShieldCheck, UserPlus, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  Network,
+  ShieldCheck,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { ChangePasswordForm } from "@/components/shared/ChangePasswordForm";
 import {
   changeDistributorPassword,
@@ -22,6 +31,159 @@ function statusClass(status?: string) {
   if (status === "active") return "bg-emerald-50 text-emerald-700";
   if (status === "expired" || status === "inactive") return "bg-amber-50 text-amber-700";
   return "bg-slate-100 text-slate-600";
+}
+
+type GenealogyNode = {
+  id: string;
+  name: string;
+  username?: string;
+  distributorCode: string;
+  networkLevel: number;
+  children: GenealogyNode[];
+};
+
+function buildGenealogyTree(root: DistributorNetwork["root"], network: DistributorNetworkMember[]) {
+  const rootNode: GenealogyNode = {
+    id: String(root.id),
+    name: root.name,
+    username: root.username,
+    distributorCode: root.distributorCode,
+    networkLevel: 0,
+    children: [],
+  };
+  const nodes = new Map<string, GenealogyNode>([[root.distributorCode.toUpperCase(), rootNode]]);
+
+  network.forEach((member) => {
+    nodes.set(member.distributorCode.toUpperCase(), {
+      id: String(member.id),
+      name: member.name,
+      username: member.username,
+      distributorCode: member.distributorCode,
+      networkLevel: Number(member.networkLevel) || 1,
+      children: [],
+    });
+  });
+
+  network.forEach((member) => {
+    const node = nodes.get(member.distributorCode.toUpperCase());
+    const parentCode = (member.sponsorCode || root.distributorCode).toUpperCase();
+    const parent = nodes.get(parentCode) || rootNode;
+    if (node && !parent.children.some((child) => child.id === node.id)) parent.children.push(node);
+  });
+
+  return rootNode;
+}
+
+function countDownline(node: GenealogyNode): number {
+  return node.children.reduce((total, child) => total + 1 + countDownline(child), 0);
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function GenealogyNodeView({ node, root = false }: { node: GenealogyNode; root?: boolean }) {
+  const [expanded, setExpanded] = useState(true);
+  const totalDownline = countDownline(node);
+  const hasChildren = node.children.length > 0;
+
+  return (
+    <div
+      className={
+        root
+          ? ""
+          : "relative before:absolute before:top-7 before:-left-4 before:w-4 before:border-t before:border-primary/20"
+      }
+    >
+      <button
+        type="button"
+        onClick={() => hasChildren && setExpanded((value) => !value)}
+        aria-expanded={hasChildren ? expanded : undefined}
+        className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${root ? "border-primary/25 bg-primary/5" : "border-border bg-card hover:border-primary/30 hover:shadow-soft"}`}
+      >
+        <span
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${root ? "bg-brand text-primary-foreground" : "bg-primary/10 text-primary"}`}
+        >
+          {initials(node.name)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span className="truncate text-sm font-bold text-foreground">{node.name}</span>
+            {root && (
+              <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">
+                You
+              </span>
+            )}
+          </span>
+          <span className="mt-0.5 block truncate text-xs text-primary">
+            {node.distributorCode} {node.username ? `• @${node.username}` : ""}
+          </span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            {node.children.length} direct join{node.children.length === 1 ? "" : "s"} ·{" "}
+            {totalDownline} total under
+          </span>
+        </span>
+        {hasChildren && (
+          <span className="shrink-0 text-primary">
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </span>
+        )}
+      </button>
+      {hasChildren && expanded && (
+        <div className="ml-5 mt-2 space-y-2 border-l border-primary/20 pl-4">
+          {node.children.map((child) => (
+            <GenealogyNodeView key={child.id} node={child} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GenealogyTree({ root, network }: Pick<DistributorNetwork, "root" | "network">) {
+  const tree = useMemo(() => buildGenealogyTree(root, network), [root, network]);
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-card">
+      <div className="p-6">
+        <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
+          Genealogy view
+        </p>
+        <div className="mt-2 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-display text-2xl font-bold">Your tree structure</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              See who joined under each distributor and how deep your network goes.
+            </p>
+          </div>
+          <Network className="h-8 w-8 shrink-0 text-primary/50" />
+        </div>
+        <div className="mt-5 max-h-[720px] overflow-auto rounded-2xl bg-surface/70 p-3 sm:p-4">
+          <GenealogyNodeView node={tree} root />
+          {!network.length && (
+            <p className="mt-3 rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+              No one has joined under your ID yet. Share your sponsor link to start the tree.
+            </p>
+          )}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <span>
+            <strong className="text-foreground">Direct joins</strong> = immediately under this
+            person
+          </span>
+          <span>
+            <strong className="text-foreground">Total under</strong> = complete downline
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function NetworkRow({ member }: { member: DistributorNetworkMember }) {
@@ -235,38 +397,41 @@ function DistributorDashboard() {
           <ChangePasswordForm onSubmit={changeDistributorPassword} />
         </div>
 
-        <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card shadow-card">
-          <div className="flex flex-col gap-2 p-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
-                Network chain
-              </p>
-              <h2 className="mt-2 font-display text-2xl font-bold">
-                All distributors under your ID
-              </h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {network.length} connected account{network.length === 1 ? "" : "s"}
-            </p>
-          </div>
-          {network.length ? (
-            <div>
-              <div className="hidden grid-cols-[70px_1.3fr_1.2fr_1fr_0.8fr] gap-4 bg-surface px-5 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase md:grid">
-                <span>Level</span>
-                <span>Distributor</span>
-                <span>Sponsor / location</span>
-                <span>Membership</span>
-                <span>ID progress</span>
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(20rem,0.85fr)_minmax(0,1.35fr)] lg:items-start">
+          <GenealogyTree root={root} network={network} />
+          <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-card">
+            <div className="flex flex-col gap-2 p-6 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
+                  Network chain
+                </p>
+                <h2 className="mt-2 font-display text-2xl font-bold">
+                  All distributors under your ID
+                </h2>
               </div>
-              {network.map((member) => (
-                <NetworkRow key={member.id} member={member} />
-              ))}
+              <p className="text-sm text-muted-foreground">
+                {network.length} connected account{network.length === 1 ? "" : "s"}
+              </p>
             </div>
-          ) : (
-            <div className="border-t border-border p-8 text-sm text-muted-foreground">
-              Your distributor chain will appear here after someone joins using your sponsor ID.
-            </div>
-          )}
+            {network.length ? (
+              <div>
+                <div className="hidden grid-cols-[70px_1.3fr_1.2fr_1fr_0.8fr] gap-4 bg-surface px-5 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase md:grid">
+                  <span>Level</span>
+                  <span>Distributor</span>
+                  <span>Sponsor / location</span>
+                  <span>Membership</span>
+                  <span>ID progress</span>
+                </div>
+                {network.map((member) => (
+                  <NetworkRow key={member.id} member={member} />
+                ))}
+              </div>
+            ) : (
+              <div className="border-t border-border p-8 text-sm text-muted-foreground">
+                Your distributor chain will appear here after someone joins using your sponsor ID.
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>
