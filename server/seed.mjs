@@ -382,11 +382,12 @@ export async function seedDatabase() {
         "No added sugar, artificial colour or preservatives as presented on the label",
       ]),
       1200,
-      700,
+      null,
       "500 ml per bottle",
       1,
     ],
   );
+  await query("UPDATE products SET dp_price = NULL WHERE slug = ?", ["anmol-ratan-juice"]);
   await query(
     "UPDATE distributor_memberships SET amount = 0, payment_method = COALESCE(payment_method, 'free') WHERE amount > 0",
   );
