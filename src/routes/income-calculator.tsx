@@ -2,11 +2,26 @@ import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowRight,
+  Award,
+  Bike,
+  Building2,
+  Car,
   Calculator as CalculatorIcon,
+  Coins,
+  Gem,
   Gift,
+  Headphones,
+  House,
   Info,
+  Laptop,
   Network,
+  Plane,
+  Shirt,
+  Smartphone,
+  Tv,
+  Watch,
   Wallet,
+  type LucideIcon,
 } from "lucide-react";
 import bottleImage from "@/assets/optimized/anmol-ratan-juice-bottle.webp";
 import incomeCalculatorBreadcrumbImage from "@/assets/income-calculator-breadcrumb.png";
@@ -18,6 +33,42 @@ const money = (value: number) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value);
+
+const prizeIcons: LucideIcon[] = [
+  Award,
+  Shirt,
+  Watch,
+  Headphones,
+  Smartphone,
+  Tv,
+  Laptop,
+  Bike,
+  Coins,
+  Car,
+  Car,
+  Gem,
+  Building2,
+  House,
+  Plane,
+];
+
+const prizeIconStyles = [
+  "bg-amber-100 text-amber-700",
+  "bg-sky-100 text-sky-700",
+  "bg-violet-100 text-violet-700",
+  "bg-fuchsia-100 text-fuchsia-700",
+  "bg-blue-100 text-blue-700",
+  "bg-cyan-100 text-cyan-700",
+  "bg-slate-100 text-slate-700",
+  "bg-rose-100 text-rose-700",
+  "bg-yellow-100 text-yellow-700",
+  "bg-red-100 text-red-700",
+  "bg-orange-100 text-orange-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-indigo-100 text-indigo-700",
+  "bg-purple-100 text-purple-700",
+  "bg-teal-100 text-teal-700",
+];
 
 function Calculator() {
   const [activeIds, setActiveIds] = useState(100);
@@ -169,6 +220,9 @@ function Calculator() {
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {awardRewards.map((item) => {
                   const isSelected = item.level === result.reward.level;
+                  const PrizeIcon = prizeIcons[item.level - 1] ?? Gift;
+                  const prizeIconStyle =
+                    prizeIconStyles[item.level - 1] ?? "bg-primary/10 text-primary";
 
                   return (
                     <button
@@ -182,15 +236,27 @@ function Calculator() {
                           : "rounded-2xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/35 hover:bg-accent"
                       }
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-bold text-primary">Level {item.level}</span>
-                        <span className="text-[11px] font-semibold text-muted-foreground">
-                          {item.qualification}
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${prizeIconStyle}`}
+                          aria-hidden="true"
+                        >
+                          <PrizeIcon className="h-5 w-5" strokeWidth={1.8} />
                         </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-primary">
+                              Level {item.level}
+                            </span>
+                            <span className="text-[11px] font-semibold text-muted-foreground">
+                              {item.qualification}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
+                            {item.reward}
+                          </p>
+                        </div>
                       </div>
-                      <p className="mt-2 text-sm font-semibold leading-snug text-foreground">
-                        {item.reward}
-                      </p>
                     </button>
                   );
                 })}
