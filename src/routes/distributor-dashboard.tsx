@@ -380,10 +380,6 @@ function DistributorDashboard() {
           </div>
         </div>
 
-        <div className="mt-8">
-          <ChangePasswordForm onSubmit={changeDistributorPassword} />
-        </div>
-
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(20rem,0.85fr)_minmax(0,1.35fr)] lg:items-start">
           <GenealogyTree root={root} network={network} />
           <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-card">
@@ -419,6 +415,10 @@ function DistributorDashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="mt-8">
+          <ChangePasswordForm onSubmit={changeDistributorPassword} />
         </div>
       </div>
     </section>
