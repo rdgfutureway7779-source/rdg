@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import logoSmall from "@/assets/optimized/logo-small.webp";
 import { ChangePasswordForm } from "@/components/shared/ChangePasswordForm";
 import {
   changeDistributorPassword,
@@ -78,16 +79,6 @@ function countDownline(node: GenealogyNode): number {
   return node.children.reduce((total, child) => total + 1 + countDownline(child), 0);
 }
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
 function GenealogyNodeView({ node, root = false }: { node: GenealogyNode; root?: boolean }) {
   const [expanded, setExpanded] = useState(true);
   const totalDownline = countDownline(node);
@@ -102,9 +93,9 @@ function GenealogyNodeView({ node, root = false }: { node: GenealogyNode; root?:
         className={`flex min-h-28 w-full flex-col items-center justify-center gap-1 rounded-2xl border p-3 text-center transition ${root ? "w-44 border-primary/25 bg-primary/5" : "border-border bg-card hover:border-primary/30 hover:shadow-soft"}`}
       >
         <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${root ? "bg-brand text-primary-foreground" : "bg-primary/10 text-primary"}`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border ${root ? "border-primary/30 bg-white" : "border-border bg-white"}`}
         >
-          {initials(node.name)}
+          <img src={logoSmall} alt="RDG" className="h-full w-full object-contain p-1" />
         </span>
         <span className="min-w-0 w-full">
           <span className="flex items-center justify-center gap-1">
