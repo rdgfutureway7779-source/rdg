@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
+import anmolRatanBottleImage from "@/assets/optimized/anmol-ratan-juice-bottle.webp";
+import anmolRatanBackImage from "@/assets/products/anmol-ratan-juice-back.jpg";
+import anmolRatanBottleAndCanisterImage from "@/assets/products/anmol-ratan-juice-bottle-and-canister.jpg";
 import {
   catalogDemoProducts,
   getCatalogImageForCategory,
@@ -33,6 +36,21 @@ const productPackages = [
   { id: "pack-2", label: "Package 2", units: 10 },
   { id: "pack-3", label: "Package 3", units: 15 },
   { id: "pack-4", label: "Package 4", units: 20 },
+];
+
+const anmolRatanGallery = [
+  {
+    src: anmolRatanBottleImage,
+    alt: "Anmol Ratan Juice bottle and canister front view",
+  },
+  {
+    src: anmolRatanBottleAndCanisterImage,
+    alt: "Anmol Ratan Juice bottle with the green canister",
+  },
+  {
+    src: anmolRatanBackImage,
+    alt: "Anmol Ratan Juice canisters showing the back label",
+  },
 ];
 
 const isNonAnmolPackage = (name: string, category?: string | null) =>
@@ -60,6 +78,7 @@ function ProductDetail() {
   const [error, setError] = useState("");
   const [pincode, setPincode] = useState("834001");
   const [deliveryMessage, setDeliveryMessage] = useState("");
+  const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(0);
   const quantityRef = useRef(quantity);
   const cartItemExistsRef = useRef(cartItemExists);
   const productRef = useRef(product);
@@ -75,6 +94,10 @@ function ProductDetail() {
   useEffect(() => {
     productRef.current = product;
   }, [product]);
+
+  useEffect(() => {
+    setSelectedGalleryIndex(0);
+  }, [product?.id]);
 
   useEffect(() => {
     if (typeof product?.id !== "number") return;
@@ -173,6 +196,13 @@ function ProductDetail() {
     ? dpPrice === null || dpPrice <= 0
     : unitPrice === null || unitPrice <= 0;
   const productCode = `RDG-${String(product?.id || "PRODUCT").toUpperCase()}`;
+  const galleryImages =
+    product?.name === "Anmol Ratan Juice"
+      ? anmolRatanGallery
+      : product?.imageUrl
+        ? [{ src: product.imageUrl, alt: `${product.name} product image` }]
+        : [];
+  const activeGalleryImage = galleryImages[selectedGalleryIndex] || galleryImages[0];
 
   function checkDelivery() {
     if (!/^\d{6}$/.test(pincode)) {
@@ -358,27 +388,35 @@ function ProductDetail() {
           <div className="rounded-2xl border border-border bg-white p-3 shadow-soft sm:p-5">
             <div className="overflow-hidden rounded-xl border border-border bg-[#f4f8ec]">
               <ProductVisual
-                imageUrl={product.imageUrl}
+                imageUrl={activeGalleryImage?.src || product.imageUrl}
                 productName={product.name}
                 category={product.category}
               />
             </div>
-            <div className="mt-3 flex gap-3">
-              <button
-                type="button"
-                className="h-20 w-20 overflow-hidden rounded-xl border-2 border-primary bg-[#f4f8ec] p-1"
-                aria-label={`Preview ${product.name}`}
-              >
-                <ProductVisual
-                  compact
-                  thumbnail
-                  imageUrl={product.imageUrl}
-                  productName={product.name}
-                  category={product.category}
-                />
-              </button>
+            <div className="mt-3 flex items-center gap-3 overflow-x-auto pb-1">
+              {galleryImages.map((image, index) => {
+                const isSelected = index === selectedGalleryIndex;
+
+                return (
+                  <button
+                    key={image.src}
+                    type="button"
+                    onClick={() => setSelectedGalleryIndex(index)}
+                    className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-[#f4f8ec] p-1 transition-shadow ${isSelected ? "border-primary shadow-soft" : "border-border hover:border-primary/50"}`}
+                    aria-label={`View ${image.alt}`}
+                    aria-current={isSelected ? "true" : undefined}
+                  >
+                    <img
+                      src={image.src}
+                      alt={image.alt}
+                      className="h-full w-full rounded-lg object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                );
+              })}
               <div className="flex items-center text-xs text-muted-foreground">
-                Product image shown for illustration. Check the current pack for final details.
+                Product gallery shown for illustration. Check the current pack for final details.
               </div>
             </div>
           </div>
