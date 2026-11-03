@@ -51,11 +51,48 @@ type Tab =
   | "activity";
 type RecordItem = Record<string, any>;
 
+const validationFieldLabels: Record<string, string> = {
+  name: "Product name",
+  slug: "Slug",
+  category: "Category",
+  subtitle: "Subtitle",
+  description: "Description",
+  highlights: "Highlights",
+  price: "MRP",
+  dpPrice: "DP price",
+  netContent: "Net quantity / content",
+  stockQuantity: "Stock quantity",
+  imageUrl: "Product image",
+  status: "Status",
+  sortOrder: "Display order",
+};
+
+function formatValidationDetails(details: unknown) {
+  if (!details || typeof details !== "object") return [];
+  const value = details as {
+    formErrors?: unknown;
+    fieldErrors?: Record<string, unknown>;
+  };
+  const formErrors = Array.isArray(value.formErrors)
+    ? value.formErrors.filter((item): item is string => typeof item === "string")
+    : [];
+  const fieldErrors = Object.entries(value.fieldErrors || {}).flatMap(([field, messages]) => {
+    const label = validationFieldLabels[field] || field;
+    const errors = Array.isArray(messages)
+      ? messages.filter((item): item is string => typeof item === "string")
+      : [];
+    return errors.map((message) => `${label}: ${message}`);
+  });
+  return [...formErrors, ...fieldErrors];
+}
+
 async function api(path: string, options: RequestInit = {}) {
   const response = await fetch(path, { credentials: "include", ...options });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload.success === false)
-    throw new Error(payload.error || "Request failed.");
+  if (!response.ok || payload.success === false) {
+    const details = formatValidationDetails(payload.details);
+    throw new Error([payload.error || "Request failed.", ...details].filter(Boolean).join("\n"));
+  }
   return payload.data;
 }
 
@@ -331,7 +368,10 @@ export function AdminDashboard() {
         </header>
         <div className="p-5 sm:p-8">
           {error && (
-            <div className="mb-5 rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div
+              role="alert"
+              className="mb-5 whitespace-pre-line rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
               {error}
             </div>
           )}
