@@ -45,7 +45,12 @@ function About() {
 
       <section className="py-14 sm:py-16">
         <div className="container-x">
-          <SectionHeading align="left" eyebrow="Our story" title={title} description={description} />
+          <SectionHeading
+            align="left"
+            eyebrow="Our story"
+            title={title}
+            description={description}
+          />
         </div>
       </section>
 

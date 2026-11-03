@@ -161,9 +161,8 @@ function Products() {
 
   useEffect(() => {
     getPublicProducts().then((data) => {
-      if (!data?.length) return;
+      if (!data) return;
       const liveProducts = data.map((item) => {
-        const storedPrice = Number(item.price);
         return {
           id: String(item.id),
           slug: item.slug,
@@ -173,18 +172,9 @@ function Products() {
           description: item.description || "",
           highlights: item.highlights || [],
           badge: item.name === "Anmol Ratan Juice" ? "Signature product" : "RDG product",
-          price:
-            Number.isFinite(storedPrice) && storedPrice > 0
-              ? storedPrice
-              : item.name === "Anmol Ratan Juice"
-                ? 1200
-                : null,
+          price: item.price == null ? null : Number(item.price),
           dpPrice:
-            item.dpPrice === null || item.dpPrice === undefined
-              ? item.name === "Anmol Ratan Juice"
-                ? 700
-                : null
-              : Number(item.dpPrice),
+            item.dpPrice === null || item.dpPrice === undefined ? null : Number(item.dpPrice),
           netContent: item.netContent || getDefaultProductNetContent(item.name, item.category),
           stockQuantity:
             item.stockQuantity === null || item.stockQuantity === undefined

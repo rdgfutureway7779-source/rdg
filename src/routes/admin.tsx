@@ -960,9 +960,20 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
     setForm(
       item
         ? {
-            ...item,
+            name: item.name || "",
+            slug: item.slug || "",
+            category: item.category || "",
+            subtitle: item.subtitle || "",
+            description: item.description || "",
             highlightsText: (item.highlights || []).join("\n"),
+            price: item.price ?? "",
+            dpPrice: item.dpPrice ?? "",
+            netContent: item.netContent || "",
+            stockQuantity: item.stockQuantity ?? "",
             isServiceable: item.isServiceable === undefined ? true : Boolean(item.isServiceable),
+            imageUrl: item.imageUrl || "",
+            status: item.status || "draft",
+            sortOrder: Number(item.sortOrder || 0),
           }
         : blank,
     );
@@ -978,15 +989,20 @@ function ProductsView({ setError }: { setError: (value: string) => void }) {
   async function save(event: FormEvent) {
     event.preventDefault();
     try {
+      const optionalNumber = (value: unknown) => {
+        if (value === "" || value === null || value === undefined) return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
       await api(editing?.id ? `/api/admin/products/${editing.id}` : "/api/admin/products", {
         method: editing?.id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          price: form.price === "" ? null : Number(form.price),
-          dpPrice: form.dpPrice === "" ? null : Number(form.dpPrice),
+          price: optionalNumber(form.price),
+          dpPrice: optionalNumber(form.dpPrice),
           netContent: form.netContent === "" ? null : String(form.netContent).trim(),
-          stockQuantity: form.stockQuantity === "" ? null : Number(form.stockQuantity),
+          stockQuantity: optionalNumber(form.stockQuantity),
           isServiceable: Boolean(form.isServiceable),
           highlights: String(form.highlightsText || "")
             .split("\n")

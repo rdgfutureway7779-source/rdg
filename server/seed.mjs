@@ -367,7 +367,25 @@ export async function seedDatabase() {
   }
 
   await query(
-    "UPDATE products SET price = 1200, dp_price = 700, net_content = '500 ml per bottle' WHERE name = 'Anmol Ratan Juice'",
+    `INSERT IGNORE INTO products
+     (name, slug, category, subtitle, description, highlights, price, dp_price, net_content, stock_quantity, is_serviceable, image_url, status, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1, NULL, 'published', ?)`,
+    [
+      "Anmol Ratan Juice",
+      "anmol-ratan-juice",
+      "Herbal & Mixed Berry Juice",
+      "A refreshing herbal wellness drink with a mixed berry blend.",
+      "Anmol Ratan Juice is a 500 ml herbal and mixed berry juice blend. Refer to the current pack for complete ingredient and usage details.",
+      JSON.stringify([
+        "Herbal and mixed berry juice blend",
+        "500 ml bottle",
+        "No added sugar, artificial colour or preservatives as presented on the label",
+      ]),
+      1200,
+      700,
+      "500 ml per bottle",
+      1,
+    ],
   );
   await query(
     "UPDATE distributor_memberships SET amount = 0, payment_method = COALESCE(payment_method, 'free') WHERE amount > 0",

@@ -426,15 +426,15 @@ export const incomePackages = [
 
 export const awardRewards = [
   { level: 1, qualification: "₹10,000", reward: "Certificate + welcome kit" },
-  { level: 2, qualification: "₹25,000", reward: "RDG T-shirt + badge" },
+  { level: 2, qualification: "₹25,000", reward: "RDG T-shirt" },
   { level: 3, qualification: "₹50,000", reward: "Smart watch" },
   { level: 4, qualification: "₹1,00,000", reward: "Bluetooth earbuds" },
   { level: 5, qualification: "₹2,50,000", reward: "Smartphone" },
-  { level: 6, qualification: "₹5,00,000", reward: "LED TV" },
+  { level: 6, qualification: "₹5,00,000", reward: "LED TV (32 inch)" },
   { level: 7, qualification: "₹10,00,000", reward: "Laptop" },
   { level: 8, qualification: "₹25,00,000", reward: "Bike" },
-  { level: 9, qualification: "₹50,00,000", reward: "20 gm gold coin" },
-  { level: 10, qualification: "₹1,00,00,000", reward: "Hatchback car" },
+  { level: 9, qualification: "₹50,00,000", reward: "Gold coin (10 gm)" },
+  { level: 10, qualification: "₹1,00,00,000", reward: "Car (hatchback)" },
   { level: 11, qualification: "₹2,50,00,000", reward: "SUV car" },
   { level: 12, qualification: "₹5,00,00,000", reward: "Luxury car" },
   { level: 13, qualification: "₹10,00,00,000", reward: "2 BHK flat" },
@@ -442,21 +442,21 @@ export const awardRewards = [
   {
     level: 15,
     qualification: "₹50,00,00,000",
-    reward: "Dream house + international tour + chairman award",
+    reward: "Dream house + international trip + lifetime award + chairman award",
   },
 ];
 
 export const planLevels = [
   { level: 1, packageValue: 100, networkValue: 10000, reward: "Certificate + welcome kit" },
-  { level: 2, packageValue: 250, networkValue: 25000, reward: "RDG T-shirt + badge" },
+  { level: 2, packageValue: 250, networkValue: 25000, reward: "RDG T-shirt" },
   { level: 3, packageValue: 500, networkValue: 50000, reward: "Smart watch" },
   { level: 4, packageValue: 1000, networkValue: 100000, reward: "Bluetooth earbuds" },
   { level: 5, packageValue: 2500, networkValue: 250000, reward: "Smartphone" },
-  { level: 6, packageValue: 5000, networkValue: 500000, reward: "LED TV" },
+  { level: 6, packageValue: 5000, networkValue: 500000, reward: "LED TV (32 inch)" },
   { level: 7, packageValue: 10000, networkValue: 1000000, reward: "Laptop" },
   { level: 8, packageValue: 25000, networkValue: 2500000, reward: "Bike" },
-  { level: 9, packageValue: 50000, networkValue: 5000000, reward: "20 gm gold coin" },
-  { level: 10, packageValue: 100000, networkValue: 10000000, reward: "Hatchback car" },
+  { level: 9, packageValue: 50000, networkValue: 5000000, reward: "Gold coin (10 gm)" },
+  { level: 10, packageValue: 100000, networkValue: 10000000, reward: "Car (hatchback)" },
   { level: 11, packageValue: 250000, networkValue: 25000000, reward: "SUV car" },
   { level: 12, packageValue: 500000, networkValue: 50000000, reward: "Luxury car" },
   { level: 13, packageValue: 1000000, networkValue: 100000000, reward: "2 BHK flat" },
@@ -465,7 +465,7 @@ export const planLevels = [
     level: 15,
     packageValue: 5000000,
     networkValue: 500000000,
-    reward: "Dream house + international tour + chairman award",
+    reward: "Dream house + international trip + lifetime award + chairman award",
   },
 ] as const;
 

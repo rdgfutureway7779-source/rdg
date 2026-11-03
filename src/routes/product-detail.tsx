@@ -14,8 +14,6 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductVisual } from "@/components/shared/ProductCard";
 import {
-  anmolRatanJuiceDescription,
-  anmolRatanJuiceHighlights,
   catalogDemoProducts,
   getCatalogImageForCategory,
   getDefaultProductNetContent,
@@ -31,13 +29,11 @@ import {
 } from "@/lib/customer-api";
 
 const productPackages = [
-  { id: "pack-1", label: "Package 1", units: 5, price: 3500 },
-  { id: "pack-2", label: "Package 2", units: 10, price: 7000 },
-  { id: "pack-3", label: "Package 3", units: 15, price: 9500 },
-  { id: "pack-4", label: "Package 4", units: 20, price: 14000 },
+  { id: "pack-1", label: "Package 1", units: 5 },
+  { id: "pack-2", label: "Package 2", units: 10 },
+  { id: "pack-3", label: "Package 3", units: 15 },
+  { id: "pack-4", label: "Package 4", units: 20 },
 ];
-
-const ANMOL_RATAN_UNIT_PRICE = 1200;
 
 const isNonAnmolPackage = (name: string, category?: string | null) =>
   name !== "Anmol Ratan Juice" && /package|bundle/i.test(`${name} ${category || ""}`);
@@ -112,66 +108,45 @@ function ProductDetail() {
   useEffect(() => {
     getPublicProducts()
       .then((items) => {
-        const fallback = [...products, ...catalogDemoProducts].find(
-          (item) =>
-            (item.id === slug || item.slug === slug || item.name === slug) &&
-            !isNonAnmolPackage(item.name, item.category),
-        );
+        const fallback =
+          items === null
+            ? [...products, ...catalogDemoProducts].find(
+                (item) =>
+                  (item.id === slug || item.slug === slug || item.name === slug) &&
+                  !isNonAnmolPackage(item.name, item.category),
+              )
+            : undefined;
         const mapped = (items || []).find(
           (item) =>
             (item.slug === slug || String(item.id) === slug) &&
             !isNonAnmolPackage(item.name, item.category),
         );
-        const mappedPrice = mapped ? Number(mapped.price) : NaN;
         setProduct(
           mapped
             ? {
                 ...mapped,
-                description:
-                  mapped.name === "Anmol Ratan Juice"
-                    ? anmolRatanJuiceDescription
-                    : mapped.description || "",
-                highlights:
-                  mapped.name === "Anmol Ratan Juice"
-                    ? anmolRatanJuiceHighlights
-                    : mapped.highlights || [],
-                price:
-                  Number.isFinite(mappedPrice) && mappedPrice > 0
-                    ? mappedPrice
-                    : mapped.name === "Anmol Ratan Juice"
-                      ? ANMOL_RATAN_UNIT_PRICE
-                      : null,
-                dpPrice:
-                  mapped.dpPrice == null
-                    ? mapped.name === "Anmol Ratan Juice"
-                      ? 700
-                      : null
-                    : Number(mapped.dpPrice),
+                description: mapped.description || "",
+                highlights: mapped.highlights || [],
+                price: mapped.price == null ? null : Number(mapped.price),
+                dpPrice: mapped.dpPrice == null ? null : Number(mapped.dpPrice),
                 netContent:
                   mapped.netContent || getDefaultProductNetContent(mapped.name, mapped.category),
                 badge: mapped.name === "Anmol Ratan Juice" ? "Signature Product" : "RDG Product",
-                imageUrl: mapped.imageUrl || getCatalogImageForCategory(mapped.category),
+                imageUrl:
+                  mapped.imageUrl ||
+                  fallback?.imageUrl ||
+                  getCatalogImageForCategory(mapped.category),
               }
             : fallback
               ? {
                   ...fallback,
                   slug: fallback.id,
-                  price:
-                    Number(fallback.price) > 0
-                      ? fallback.price
-                      : fallback.name === "Anmol Ratan Juice"
-                        ? ANMOL_RATAN_UNIT_PRICE
-                        : null,
-                  dpPrice:
-                    fallback.dpPrice == null
-                      ? fallback.name === "Anmol Ratan Juice"
-                        ? 700
-                        : null
-                      : Number(fallback.dpPrice),
+                  price: fallback.price == null ? null : Number(fallback.price),
+                  dpPrice: fallback.dpPrice == null ? null : Number(fallback.dpPrice),
                   netContent:
                     fallback.netContent ||
                     getDefaultProductNetContent(fallback.name, fallback.category),
-                  imageUrl: getCatalogImageForCategory(fallback.category),
+                  imageUrl: fallback.imageUrl || getCatalogImageForCategory(fallback.category),
                   id: fallback.id,
                 }
               : null,
@@ -183,21 +158,20 @@ function ProductDetail() {
   const selectedPackage =
     productPackages.find((item) => item.id === selectedPackageId) || productPackages[0];
   const isPackageProduct = product?.name === "Anmol Ratan Juice";
-  const unitPrice = isPackageProduct
-    ? ANMOL_RATAN_UNIT_PRICE
-    : product?.price == null
-      ? null
-      : Number(product.price);
+  const unitPrice = product?.price == null ? null : Number(product.price);
+  const dpPrice = product?.dpPrice == null ? null : Number(product.dpPrice);
   const packageTotal =
-    isPackageProduct && unitPrice !== null ? selectedPackage.price * quantity : null;
+    isPackageProduct && dpPrice !== null ? dpPrice * selectedPackage.units * quantity : null;
   const cartQuantity = (isPackageProduct ? selectedPackage.units : 1) * quantity;
   const maxQuantity = isPackageProduct ? Math.floor(99 / selectedPackage.units) : 99;
-  const dpPrice = product?.dpPrice == null ? null : Number(product.dpPrice);
   const isOutOfStock =
     product?.stockQuantity !== null &&
     product?.stockQuantity !== undefined &&
     Number(product.stockQuantity) <= 0;
   const isUnavailable = Boolean(product && (product.isServiceable === false || isOutOfStock));
+  const isPriceUnavailable = isPackageProduct
+    ? dpPrice === null || dpPrice <= 0
+    : unitPrice === null || unitPrice <= 0;
   const productCode = `RDG-${String(product?.id || "PRODUCT").toUpperCase()}`;
 
   function checkDelivery() {
@@ -218,6 +192,14 @@ function ProductDetail() {
         isOutOfStock
           ? "This product is currently out of stock."
           : "This product is not serviceable to your area.",
+      );
+      return;
+    }
+    if (isPriceUnavailable) {
+      setError(
+        isPackageProduct
+          ? "Distributor price is not configured for this product yet. Please contact RDG."
+          : "This product price is not configured yet. Please contact RDG.",
       );
       return;
     }
@@ -348,6 +330,30 @@ function ProductDetail() {
   return (
     <section className="bg-[#fafbf7] py-8 sm:py-12">
       <div className="container-x">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <a href="/products" className="font-semibold text-primary hover:underline">
+              Products
+            </a>
+            <span aria-hidden="true">/</span>
+            <span className="truncate">{product.name}</span>
+          </div>
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              isUnavailable || isPriceUnavailable
+                ? "bg-destructive/10 text-destructive"
+                : "bg-secondary/10 text-secondary"
+            }`}
+          >
+            {isPriceUnavailable
+              ? "Price not configured"
+              : isOutOfStock
+                ? "Out of stock"
+                : product.isServiceable === false
+                  ? "Not serviceable"
+                  : "Available for delivery"}
+          </span>
+        </div>
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.02fr)_minmax(26rem,0.98fr)] lg:items-start">
           <div className="rounded-2xl border border-border bg-white p-3 shadow-soft sm:p-5">
             <div className="overflow-hidden rounded-xl border border-border bg-[#f4f8ec]">
@@ -405,14 +411,20 @@ function ProductDetail() {
             <div className="mt-6 border-y border-border py-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">MRP (1 bottle)</p>
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {isPackageProduct ? "MRP (1 bottle)" : "MRP"}
+                  </p>
                   <p className="mt-1 text-xl font-semibold text-foreground">{money(unitPrice)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Single-bottle price</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-primary">Distributor price</p>
                   <p className="mt-1 text-2xl font-bold text-primary">{money(dpPrice)}</p>
-                  <p className="mt-1 text-xs text-secondary">Package buyers only</p>
+                  <p className="mt-1 text-xs text-secondary">
+                    {dpPrice === null
+                      ? "Set this value in Admin → Products"
+                      : "Package buyers only"}
+                  </p>
                 </div>
               </div>
               <p className="mt-3 text-xs font-medium text-secondary">Inclusive of all taxes</p>
@@ -450,8 +462,9 @@ function ProductDetail() {
             {isPackageProduct && (
               <div className="mt-6 rounded-xl border border-primary/15 bg-[#f5faee] p-4">
                 <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-                  A single bottle is ₹1,200. The ₹700 per-bottle distributor rate is available only
-                  when purchasing a package.
+                  {unitPrice === null || dpPrice === null
+                    ? "Set the MRP and DP price in Admin → Products before publishing this package."
+                    : `A single bottle is ${money(unitPrice)}. The ${money(dpPrice)} per-bottle distributor rate is available only when purchasing a package.`}
                 </p>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-foreground">
@@ -464,8 +477,9 @@ function ProductDetail() {
                   >
                     {productPackages.map((packageOption) => (
                       <option key={packageOption.id} value={packageOption.id}>
-                        {packageOption.label} — {money(packageOption.price)} ({packageOption.units}{" "}
-                        bottles)
+                        {packageOption.label} —{" "}
+                        {money(dpPrice === null ? null : dpPrice * packageOption.units)} (
+                        {packageOption.units} bottles)
                       </option>
                     ))}
                   </select>
@@ -514,7 +528,7 @@ function ProductDetail() {
                 <button
                   type="button"
                   onClick={() => void addToCart(true)}
-                  disabled={adding || isUnavailable}
+                  disabled={adding || isUnavailable || isPriceUnavailable}
                   className="bg-brand inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-primary-foreground shadow-card disabled:opacity-60 sm:flex-none"
                 >
                   <Zap className="h-4 w-4" /> {adding ? "Processing…" : "Buy now"}
@@ -522,7 +536,7 @@ function ProductDetail() {
                 <button
                   type="button"
                   onClick={() => void addToCart()}
-                  disabled={adding || isUnavailable}
+                  disabled={adding || isUnavailable || isPriceUnavailable}
                   className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-lg border border-primary/25 bg-white px-5 py-3 text-sm font-semibold text-primary shadow-soft disabled:opacity-60 sm:flex-none"
                 >
                   <ShoppingCart className="h-4 w-4" /> {adding ? "Adding…" : "Add to cart"}

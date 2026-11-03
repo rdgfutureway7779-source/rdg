@@ -6,6 +6,7 @@ import {
   getCustomerCart,
   getCustomerMe,
   getCustomerCartLineTotal,
+  customerCartItemHasPrice,
   broadcastCustomerCartChange,
   customerCartSyncKey,
   logoutCustomer,
@@ -149,7 +150,7 @@ function Cart() {
     );
   }
 
-  const hasPrices = items.every((item) => item.price !== null && item.price !== undefined);
+  const hasPrices = items.every(customerCartItemHasPrice);
   const total = items.reduce((sum, item) => sum + getCustomerCartLineTotal(item), 0);
 
   return (
@@ -211,7 +212,7 @@ function Cart() {
                     <h2 className="mt-1 font-display text-xl font-bold">{item.name}</h2>
                     <p className="mt-1 text-sm text-muted-foreground">{item.subtitle}</p>
                     <p className="mt-3 text-sm font-semibold text-primary">
-                      {item.price
+                      {customerCartItemHasPrice(item)
                         ? `₹${(getCustomerCartLineTotal(item) / item.quantity).toLocaleString("en-IN")} per item`
                         : "Price on request"}
                     </p>

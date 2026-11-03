@@ -6,6 +6,7 @@ import {
   getCustomerCart,
   getCustomerMe,
   getCustomerCartLineTotal,
+  customerCartItemHasPrice,
   verifyCustomerPayment,
   type Customer,
   type CustomerCartItem,
@@ -55,8 +56,7 @@ function Checkout() {
     });
   }, []);
 
-  const hasPrices =
-    items.length > 0 && items.every((item) => item.price !== null && item.price !== undefined);
+  const hasPrices = items.length > 0 && items.every(customerCartItemHasPrice);
   const subtotal = useMemo(
     () => (hasPrices ? items.reduce((sum, item) => sum + getCustomerCartLineTotal(item), 0) : null),
     [hasPrices, items],
@@ -343,7 +343,7 @@ function Checkout() {
                     {item.name} × {item.quantity}
                   </span>
                   <span className="font-semibold">
-                    {item.price === null || item.price === undefined
+                    {!customerCartItemHasPrice(item)
                       ? "Price on request"
                       : money(getCustomerCartLineTotal(item))}
                   </span>

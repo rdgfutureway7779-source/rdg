@@ -28,7 +28,9 @@ function SuccessStories() {
                     </div>
                     <div className="p-6">
                       <p className="font-display font-semibold text-foreground">{v}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">Video testimonial - 6 min</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Video testimonial - 6 min
+                      </p>
                     </div>
                   </div>
                 </StaggerItem>

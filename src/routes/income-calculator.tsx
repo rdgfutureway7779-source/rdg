@@ -1,9 +1,16 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Calculator as CalculatorIcon, Info, Network, Wallet } from "lucide-react";
+import {
+  ArrowRight,
+  Calculator as CalculatorIcon,
+  Gift,
+  Info,
+  Network,
+  Wallet,
+} from "lucide-react";
 import bottleImage from "@/assets/optimized/anmol-ratan-juice-bottle.webp";
 import incomeCalculatorBreadcrumbImage from "@/assets/income-calculator-breadcrumb.png";
-import { bonuses, directReferralPlans, planLevels } from "@/data/site";
+import { awardRewards, bonuses, directReferralPlans, planLevels } from "@/data/site";
 
 const money = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -23,6 +30,7 @@ function Calculator() {
     );
     const level = planLevels[levelIndex]!;
     const directPlan = directReferralPlans[directPlanIndex]!;
+    const reward = awardRewards[levelIndex]!;
     const packageCount = 100;
     const distributorIncome = level.packageValue * packageCount;
     const next = planLevels[levelIndex + 1];
@@ -33,6 +41,7 @@ function Calculator() {
     return {
       levelIndex,
       level,
+      reward,
       directPlan,
       packageCount,
       distributorIncome,
@@ -124,6 +133,68 @@ function Calculator() {
                 Formula: {money(result.level.packageValue)} × {result.packageCount} packages ={" "}
                 {money(result.distributorIncome)}
               </p>
+            </div>
+
+            <div className="mt-9 border-t border-border pt-8">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold text-gold-foreground">
+                  <Gift className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="font-display text-lg font-semibold text-foreground">
+                    15-level prize ladder
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Select a level to see its award and qualification value.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-gold/35 bg-gold/10 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold tracking-[0.16em] text-gold-foreground uppercase">
+                      Current prize · Level {result.reward.level}
+                    </p>
+                    <p className="mt-2 font-display text-lg font-bold text-foreground">
+                      {result.reward.reward}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-card px-3 py-1 text-xs font-bold text-primary shadow-soft">
+                    {result.reward.qualification}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {awardRewards.map((item) => {
+                  const isSelected = item.level === result.reward.level;
+
+                  return (
+                    <button
+                      key={item.level}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => setActiveIds(item.level * 100)}
+                      className={
+                        isSelected
+                          ? "rounded-2xl border border-primary bg-primary/5 p-3 text-left shadow-soft"
+                          : "rounded-2xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/35 hover:bg-accent"
+                      }
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-bold text-primary">Level {item.level}</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground">
+                          {item.qualification}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm font-semibold leading-snug text-foreground">
+                        {item.reward}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="mt-9">

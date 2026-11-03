@@ -820,7 +820,7 @@ async function getCustomerCart(customerId) {
   const [rows] = await query(
     `SELECT c.id AS cartItemId, c.product_id AS productId, c.quantity,
        p.name, p.slug, p.category, p.subtitle, p.description, p.highlights,
-       p.price, p.stock_quantity AS stockQuantity, p.is_serviceable AS isServiceable,
+       p.price, p.dp_price AS dpPrice, p.stock_quantity AS stockQuantity, p.is_serviceable AS isServiceable,
        p.image_url AS imageUrl
      FROM customer_cart_items c
      INNER JOIN products p ON p.id = c.product_id
@@ -835,8 +835,8 @@ async function getCustomerCart(customerId) {
   );
   return rows.map((row) => ({
     ...row,
-    price:
-      row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
+    price: row.price === null ? null : Number(row.price),
+    dpPrice: row.dpPrice === null ? null : Number(row.dpPrice),
     stockQuantity: row.stockQuantity === null ? null : Number(row.stockQuantity),
     isServiceable: Boolean(row.isServiceable),
     highlights: parseJson(row.highlights, []),
@@ -851,7 +851,15 @@ function customerCartTotals(cart) {
   if (cart.some((item) => item.stockQuantity !== null && item.quantity > item.stockQuantity)) {
     throw new Error("One or more products exceed the available stock.");
   }
-  if (cart.some((item) => item.price === null || item.price === undefined)) {
+  if (
+    cart.some((item) => {
+      const isPackageLine =
+        item.name === "Anmol Ratan Juice" && item.quantity >= 5 && item.quantity % 5 === 0;
+      return isPackageLine
+        ? item.dpPrice === null || item.dpPrice === undefined
+        : item.price === null || item.price === undefined;
+    })
+  ) {
     throw new Error("Add prices to every product before placing an order.");
   }
   const subtotal = cart.reduce((sum, item) => sum + customerCartLineTotal(item), 0);
@@ -862,7 +870,7 @@ function customerCartTotals(cart) {
 function customerCartLineTotal(item) {
   const quantity = Number(item.quantity);
   if (item.name === "Anmol Ratan Juice" && quantity >= 5 && quantity % 5 === 0) {
-    return quantity * 700;
+    return quantity * Number(item.dpPrice || 0);
   }
   return Number(item.price || 0) * quantity;
 }
@@ -1060,15 +1068,13 @@ app.post(
   loginLimiter,
   asyncRoute(async (req, res) => {
     const input = customerResetPasswordSchema.safeParse(req.body);
-    if (!input.success) return fail(res, "Enter a valid email and a password of 8+ characters.", 422);
+    if (!input.success)
+      return fail(res, "Enter a valid email and a password of 8+ characters.", 422);
     const email = input.data.email.toLowerCase();
     const [[customer]] = await query("SELECT id FROM customers WHERE email = ? LIMIT 1", [email]);
     if (!customer) return fail(res, "No customer account was found with that email.", 404);
     const passwordHash = await bcrypt.hash(input.data.newPassword, 12);
-    await query("UPDATE customers SET password_hash = ? WHERE id = ?", [
-      passwordHash,
-      customer.id,
-    ]);
+    await query("UPDATE customers SET password_hash = ? WHERE id = ?", [passwordHash, customer.id]);
     return ok(res, { reset: true });
   }),
 );
@@ -1361,7 +1367,8 @@ app.post(
   loginLimiter,
   asyncRoute(async (req, res) => {
     const input = distributorResetPasswordSchema.safeParse(req.body);
-    if (!input.success) return fail(res, "Enter your username or email and a password of 8+ characters.", 422);
+    if (!input.success)
+      return fail(res, "Enter your username or email and a password of 8+ characters.", 422);
     const identifier = input.data.identifier.toLowerCase();
     const [[account]] = await query(
       `SELECT a.id
@@ -1371,7 +1378,8 @@ app.post(
        LIMIT 1`,
       [identifier, identifier],
     );
-    if (!account) return fail(res, "No distributor account was found with that username or email.", 404);
+    if (!account)
+      return fail(res, "No distributor account was found with that username or email.", 404);
     const passwordHash = await bcrypt.hash(input.data.newPassword, 12);
     await query("UPDATE distributor_accounts SET password_hash = ? WHERE id = ?", [
       passwordHash,
@@ -2555,8 +2563,7 @@ app.get(
       res,
       rows.map((row) => ({
         ...row,
-        price:
-          row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
+        price: row.price === null ? null : Number(row.price),
         dpPrice: row.dpPrice === null ? null : Number(row.dpPrice),
         stockQuantity: row.stockQuantity === null ? null : Number(row.stockQuantity),
         isServiceable: Boolean(row.isServiceable),
@@ -3418,8 +3425,7 @@ app.get(
       res,
       rows.map((row) => ({
         ...row,
-        price:
-          row.price === null ? (row.name === "Anmol Ratan Juice" ? 1200 : null) : Number(row.price),
+        price: row.price === null ? null : Number(row.price),
         dpPrice: row.dpPrice === null ? null : Number(row.dpPrice),
         stockQuantity: row.stockQuantity === null ? null : Number(row.stockQuantity),
         isServiceable: Boolean(row.isServiceable),
