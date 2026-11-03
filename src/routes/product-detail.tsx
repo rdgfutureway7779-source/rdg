@@ -183,8 +183,11 @@ function ProductDetail() {
   const isPackageProduct = product?.name === "Anmol Ratan Juice";
   const unitPrice = product?.price == null ? null : Number(product.price);
   const dpPrice = product?.dpPrice == null ? null : Number(product.dpPrice);
+  const packageUnitPrice = dpPrice ?? unitPrice;
   const packageTotal =
-    isPackageProduct && dpPrice !== null ? dpPrice * selectedPackage.units * quantity : null;
+    isPackageProduct && packageUnitPrice !== null
+      ? packageUnitPrice * selectedPackage.units * quantity
+      : null;
   const cartQuantity = (isPackageProduct ? selectedPackage.units : 1) * quantity;
   const maxQuantity = isPackageProduct ? Math.floor(99 / selectedPackage.units) : 99;
   const isOutOfStock =
@@ -193,7 +196,7 @@ function ProductDetail() {
     Number(product.stockQuantity) <= 0;
   const isUnavailable = Boolean(product && (product.isServiceable === false || isOutOfStock));
   const isPriceUnavailable = isPackageProduct
-    ? dpPrice === null || dpPrice <= 0
+    ? packageUnitPrice === null || packageUnitPrice <= 0
     : unitPrice === null || unitPrice <= 0;
   const productCode = `RDG-${String(product?.id || "PRODUCT").toUpperCase()}`;
   const galleryImages =
@@ -500,9 +503,11 @@ function ProductDetail() {
             {isPackageProduct && (
               <div className="mt-6 rounded-xl border border-primary/15 bg-[#f5faee] p-4">
                 <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-                  {unitPrice === null || dpPrice === null
-                    ? "Set the MRP and DP price in Admin → Products before publishing this package."
-                    : `A single bottle is ${money(unitPrice)}. The ${money(dpPrice)} per-bottle distributor rate is available only when purchasing a package.`}
+                  {unitPrice === null
+                    ? "Set the MRP in Admin → Products before publishing this package."
+                    : dpPrice === null
+                      ? `Distributor price is not configured yet. This package uses the MRP of ${money(unitPrice)} per bottle until Admin sets a DP price.`
+                      : `A single bottle is ${money(unitPrice)}. The ${money(dpPrice)} per-bottle distributor rate is available only when purchasing a package.`}
                 </p>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-foreground">
@@ -516,8 +521,10 @@ function ProductDetail() {
                     {productPackages.map((packageOption) => (
                       <option key={packageOption.id} value={packageOption.id}>
                         {packageOption.label} —{" "}
-                        {money(dpPrice === null ? null : dpPrice * packageOption.units)} (
-                        {packageOption.units} bottles)
+                        {money(
+                          packageUnitPrice === null ? null : packageUnitPrice * packageOption.units,
+                        )}{" "}
+                        ({packageOption.units} bottles)
                       </option>
                     ))}
                   </select>

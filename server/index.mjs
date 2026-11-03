@@ -856,7 +856,8 @@ function customerCartTotals(cart) {
       const isPackageLine =
         item.name === "Anmol Ratan Juice" && item.quantity >= 5 && item.quantity % 5 === 0;
       return isPackageLine
-        ? item.dpPrice === null || item.dpPrice === undefined
+        ? (item.dpPrice === null || item.dpPrice === undefined) &&
+            (item.price === null || item.price === undefined)
         : item.price === null || item.price === undefined;
     })
   ) {
@@ -870,7 +871,7 @@ function customerCartTotals(cart) {
 function customerCartLineTotal(item) {
   const quantity = Number(item.quantity);
   if (item.name === "Anmol Ratan Juice" && quantity >= 5 && quantity % 5 === 0) {
-    return quantity * Number(item.dpPrice || 0);
+    return quantity * Number(item.dpPrice ?? item.price ?? 0);
   }
   return Number(item.price || 0) * quantity;
 }

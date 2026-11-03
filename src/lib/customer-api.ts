@@ -25,7 +25,7 @@ export function getCustomerCartLineTotal(
 ) {
   const quantity = Number(item.quantity);
   if (item.name === "Anmol Ratan Juice" && quantity >= 5 && quantity % 5 === 0) {
-    return quantity * Number(item.dpPrice || 0);
+    return quantity * Number(item.dpPrice ?? item.price ?? 0);
   }
   const unitPrice = item.price ?? 0;
   return Number(unitPrice) * quantity;
@@ -36,7 +36,7 @@ export function customerCartItemHasPrice(
 ) {
   const isPackageLine =
     item.name === "Anmol Ratan Juice" && item.quantity >= 5 && item.quantity % 5 === 0;
-  return isPackageLine ? item.dpPrice !== null && item.dpPrice !== undefined : item.price != null;
+  return isPackageLine ? item.dpPrice != null || item.price != null : item.price != null;
 }
 
 export const customerCartSyncKey = "rdg-customer-cart-sync";
