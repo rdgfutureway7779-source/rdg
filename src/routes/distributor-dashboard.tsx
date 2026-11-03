@@ -94,37 +94,27 @@ function GenealogyNodeView({ node, root = false }: { node: GenealogyNode; root?:
   const hasChildren = node.children.length > 0;
 
   return (
-    <div
-      className={
-        root
-          ? ""
-          : "relative before:absolute before:top-7 before:-left-4 before:w-4 before:border-t before:border-primary/20"
-      }
-    >
+    <div className={root ? "flex flex-col items-center" : "w-36 shrink-0"}>
       <button
         type="button"
         onClick={() => hasChildren && setExpanded((value) => !value)}
         aria-expanded={hasChildren ? expanded : undefined}
-        className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${root ? "border-primary/25 bg-primary/5" : "border-border bg-card hover:border-primary/30 hover:shadow-soft"}`}
+        className={`flex min-h-28 w-full flex-col items-center justify-center gap-1 rounded-2xl border p-3 text-center transition ${root ? "w-44 border-primary/25 bg-primary/5" : "border-border bg-card hover:border-primary/30 hover:shadow-soft"}`}
       >
         <span
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${root ? "bg-brand text-primary-foreground" : "bg-primary/10 text-primary"}`}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${root ? "bg-brand text-primary-foreground" : "bg-primary/10 text-primary"}`}
         >
           {initials(node.name)}
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className="truncate text-sm font-bold text-foreground">{node.name}</span>
-            {root && (
-              <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">
-                You
-              </span>
-            )}
+        <span className="min-w-0 w-full">
+          <span className="flex items-center justify-center gap-1">
+            <span className="truncate text-xs font-bold text-foreground">{node.name}</span>
+            {root && <span className="text-[10px] font-bold text-secondary">(You)</span>}
           </span>
-          <span className="mt-0.5 block truncate text-xs text-primary">
+          <span className="mt-0.5 block truncate text-[10px] text-primary">
             {node.distributorCode} {node.username ? `• @${node.username}` : ""}
           </span>
-          <span className="mt-1 block text-[11px] text-muted-foreground">
+          <span className="mt-1 block text-[10px] leading-tight text-muted-foreground">
             {node.children.length} direct join{node.children.length === 1 ? "" : "s"} ·{" "}
             {totalDownline} total under
           </span>
@@ -136,9 +126,15 @@ function GenealogyNodeView({ node, root = false }: { node: GenealogyNode; root?:
         )}
       </button>
       {hasChildren && expanded && (
-        <div className="ml-5 mt-2 space-y-2 border-l border-primary/20 pl-4">
+        <div className="relative mt-8 flex min-w-max justify-center gap-3 pt-6 before:absolute before:top-0 before:left-[4.5rem] before:right-[4.5rem] before:border-t before:border-primary/25">
+          <span className="absolute -top-8 left-1/2 h-8 border-l border-primary/25" />
           {node.children.map((child) => (
-            <GenealogyNodeView key={child.id} node={child} />
+            <div
+              key={child.id}
+              className="relative w-36 shrink-0 before:absolute before:-top-6 before:left-1/2 before:h-6 before:border-l before:border-primary/25"
+            >
+              <GenealogyNodeView node={child} />
+            </div>
           ))}
         </div>
       )}
