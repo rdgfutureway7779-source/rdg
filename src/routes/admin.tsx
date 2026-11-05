@@ -2106,41 +2106,34 @@ function AdminNetworkTree({
     const code = String(item.distributor_code || "").toUpperCase();
     const children = bySponsor.get(code) || [];
     return (
-      <div key={`${item.id}-${depth}`} className={depth ? "border-l border-primary/20 pl-4" : ""}>
-        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full border border-primary/15 bg-white p-1">
-              <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
-            </span>
-            <p className="truncate font-semibold text-foreground">
-              {item.name}{" "}
-              <span className="font-normal text-primary">
-                (Sponsor ID: {item.distributor_code})
-              </span>
-            </p>
-            <p className="hidden truncate text-xs text-muted-foreground">
-              {item.username ? `@${item.username}` : "No login account"} •{" "}
-              {item.city || "City not added"}
-            </p>
-            <p className="hidden truncate text-xs text-muted-foreground">
-              {item.email || "Email not added"} {item.phone ? `• ${item.phone}` : ""}
-            </p>
-          </div>
-          <div className="hidden flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-              {depth ? `Level ${depth}` : focusCode ? "Selected distributor" : "Top level"}
-            </span>
-            <span className="rounded-full bg-secondary/10 px-2.5 py-1 font-semibold text-secondary">
-              {children.length} direct
-            </span>
-            <span className="text-muted-foreground">
-              {Number(item.totalIds || 0).toLocaleString("en-IN")} IDs
-            </span>
-          </div>
+      <div key={`${item.id}-${depth}`} className="flex shrink-0 flex-col items-center">
+        <div
+          className={`flex min-h-32 ${depth === 0 ? "w-52 border-primary/35 bg-primary/5" : "w-44 border-primary/20"} flex-col items-center justify-center gap-2 rounded-2xl border bg-card px-3 py-3 text-center shadow-sm`}
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/15 bg-white p-1">
+            <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
+          </span>
+          <p className="w-full truncate text-sm font-semibold text-foreground" title={item.name}>
+            {item.name}
+          </p>
+          <p
+            className="w-full truncate text-xs font-medium text-primary"
+            title={`Sponsor ID: ${item.distributor_code}`}
+          >
+            Sponsor ID: {item.distributor_code}
+          </p>
         </div>
         {children.length ? (
-          <div className="mt-2 space-y-2">
-            {children.map((child) => branch(child, depth + 1, nextVisited))}
+          <div className="relative mt-8 flex min-w-max justify-center gap-3 pt-6 before:absolute before:top-0 before:left-[4.5rem] before:right-[4.5rem] before:border-t before:border-primary/25">
+            <span className="absolute -top-8 left-1/2 h-8 border-l border-primary/25" />
+            {children.map((child) => (
+              <div
+                key={`${child.id}-${depth + 1}`}
+                className="relative w-44 shrink-0 before:absolute before:-top-6 before:left-1/2 before:h-6 before:border-l before:border-primary/25"
+              >
+                {branch(child, depth + 1, nextVisited)}
+              </div>
+            ))}
           </div>
         ) : null}
       </div>
@@ -2171,8 +2164,10 @@ function AdminNetworkTree({
           )}
         </div>
       </div>
-      <div className="mt-5 space-y-3">
-        {roots.map((item) => branch(item, 0, new Set<number>()))}
+      <div className="mt-5 overflow-x-auto rounded-2xl bg-card/60 p-4">
+        <div className="flex min-w-max justify-center gap-3">
+          {roots.map((item) => branch(item, 0, new Set<number>()))}
+        </div>
       </div>
     </div>
   );
