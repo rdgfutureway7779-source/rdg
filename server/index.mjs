@@ -537,6 +537,15 @@ const adminDistributorSchema = z.object({
   email: z.string().trim().email().max(190),
   phone: optionalMobileSchema,
   city: z.string().max(120).optional().nullable(),
+  bankAccountNumber: z.string().trim().max(40).optional().nullable().or(z.literal("")),
+  bankIfscCode: z
+    .string()
+    .trim()
+    .max(20)
+    .regex(/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/i, "Enter a valid IFSC code.")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
   sponsorCode: z.string().max(80).optional().nullable(),
   username: z.string().trim().min(4).max(190),
   password: z.string().min(8).max(120).optional().nullable().or(z.literal("")),
@@ -2267,13 +2276,15 @@ app.post(
     const distributorCode = input.distributorCode?.trim() || (await generateDistributorCode());
     try {
       const [result] = await query(
-        "INSERT INTO distributors (distributor_code, name, email, phone, city, sponsor_code, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO distributors (distributor_code, name, email, phone, city, bank_account_number, bank_ifsc_code, sponsor_code, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
           distributorCode,
           input.name,
           input.email || null,
           input.phone || null,
           input.city || null,
+          input.bankAccountNumber || null,
+          input.bankIfscCode ? input.bankIfscCode.toUpperCase() : null,
           sponsorCode,
           input.status,
           input.notes || null,
@@ -2319,13 +2330,15 @@ app.put(
     }
     try {
       const [result] = await query(
-        "UPDATE distributors SET distributor_code = ?, name = ?, email = ?, phone = ?, city = ?, sponsor_code = ?, status = ?, notes = ? WHERE id = ?",
+        "UPDATE distributors SET distributor_code = ?, name = ?, email = ?, phone = ?, city = ?, bank_account_number = ?, bank_ifsc_code = ?, sponsor_code = ?, status = ?, notes = ? WHERE id = ?",
         [
           distributorCode,
           input.name,
           input.email || null,
           input.phone || null,
           input.city || null,
+          input.bankAccountNumber || null,
+          input.bankIfscCode ? input.bankIfscCode.toUpperCase() : null,
           sponsorCode,
           input.status,
           input.notes || null,
@@ -2420,7 +2433,8 @@ function transactionFilters(queryParams) {
   return { where, params };
 }
 
-const transactionSelect = `SELECT t.*, d.distributor_code AS distributorCode, d.name AS distributorName
+const transactionSelect = `SELECT t.*, d.distributor_code AS distributorCode, d.name AS distributorName,
+  d.bank_account_number AS bankAccountNumber, d.bank_ifsc_code AS bankIfscCode
   FROM distributor_transactions t INNER JOIN distributors d ON d.id = t.distributor_id`;
 
 app.get(
@@ -2450,6 +2464,8 @@ app.get(
       "Date",
       "Distributor ID",
       "Distributor",
+      "Bank account number",
+      "IFSC code",
       "Type",
       "Reference",
       "IDs",
@@ -2465,6 +2481,8 @@ app.get(
         item.transaction_date,
         item.distributorCode,
         item.distributorName,
+        item.bankAccountNumber,
+        item.bankIfscCode,
         item.transaction_type,
         item.reference_no,
         item.id_count,

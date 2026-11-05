@@ -1700,6 +1700,8 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
     email: "",
     phone: "",
     city: "",
+    bankAccountNumber: "",
+    bankIfscCode: "",
     sponsorCode: "",
     username: "",
     password: "",
@@ -1732,6 +1734,8 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             email: item.email || "",
             phone: item.phone || "",
             city: item.city || "",
+            bankAccountNumber: item.bank_account_number || item.bankAccountNumber || "",
+            bankIfscCode: item.bank_ifsc_code || item.bankIfscCode || "",
             sponsorCode: item.sponsor_code || item.sponsorCode || "",
             username: item.username || "",
             password: "",
@@ -1855,6 +1859,17 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
               label="City"
               value={form.city}
               onChange={(value) => setForm({ ...form, city: value })}
+            />
+            <TextField
+              label="Bank account number (optional)"
+              value={form.bankAccountNumber}
+              onChange={(value) => setForm({ ...form, bankAccountNumber: value })}
+            />
+            <TextField
+              label="IFSC code (optional)"
+              value={form.bankIfscCode}
+              onChange={(value) => setForm({ ...form, bankIfscCode: value.toUpperCase() })}
+              placeholder="ABCD0123456"
             />
             <TextField
               label="Parent Sponsor ID (optional for top-level)"
@@ -2521,9 +2536,12 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
         </Editor>
       )}
       <DataTable
+        minWidth="1280px"
         headers={[
           "Date",
           "Distributor",
+          "Transaction ID",
+          "Account / IFSC",
           "Type",
           "IDs / Level",
           "Amount",
@@ -2540,6 +2558,15 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
             <td className="px-4 py-4">
               <p className="font-semibold">{item.distributorName}</p>
               <p className="text-xs text-muted-foreground">{item.distributorCode}</p>
+            </td>
+            <td className="px-4 py-4 text-xs">
+              <p className="max-w-44 break-all font-mono text-primary">
+                {item.reference_no || "—"}
+              </p>
+            </td>
+            <td className="px-4 py-4 text-xs">
+              <p className="font-mono">{item.bankAccountNumber || "Not added"}</p>
+              <p className="mt-1 text-muted-foreground">{item.bankIfscCode || "IFSC not added"}</p>
             </td>
             <td className="px-4 py-4 text-sm capitalize">
               {item.transaction_type.replace("_", " ")}

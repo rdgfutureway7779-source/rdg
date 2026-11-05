@@ -124,6 +124,22 @@ export async function migrate() {
       "ALTER TABLE products ADD COLUMN is_serviceable TINYINT(1) NOT NULL DEFAULT 1 AFTER stock_quantity",
     );
   }
+  const [bankAccountColumn] = await activePool.query(
+    "SHOW COLUMNS FROM distributors LIKE 'bank_account_number'",
+  );
+  if (!bankAccountColumn.length) {
+    await activePool.query(
+      "ALTER TABLE distributors ADD COLUMN bank_account_number VARCHAR(40) NULL AFTER city",
+    );
+  }
+  const [bankIfscColumn] = await activePool.query(
+    "SHOW COLUMNS FROM distributors LIKE 'bank_ifsc_code'",
+  );
+  if (!bankIfscColumn.length) {
+    await activePool.query(
+      "ALTER TABLE distributors ADD COLUMN bank_ifsc_code VARCHAR(20) NULL AFTER bank_account_number",
+    );
+  }
 }
 
 export async function closePool() {

@@ -264,6 +264,8 @@ CREATE TABLE IF NOT EXISTS distributors (
   email VARCHAR(190) NULL,
   phone VARCHAR(40) NULL,
   city VARCHAR(120) NULL,
+  bank_account_number VARCHAR(40) NULL,
+  bank_ifsc_code VARCHAR(20) NULL,
   sponsor_code VARCHAR(80) NULL,
   status ENUM('active', 'inactive', 'blocked') NOT NULL DEFAULT 'active',
   notes TEXT NULL,
