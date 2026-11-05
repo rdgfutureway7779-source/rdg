@@ -1950,7 +1950,9 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             <td className="px-4 py-4">
               <p className="font-semibold">{item.name}</p>
               <p className="text-xs text-muted-foreground">{item.distributor_code}</p>
-              <p className="mt-1 text-xs text-primary">@{item.username || "no login yet"}</p>
+              <p className="mt-1 text-xs text-primary">
+                Login ID: {item.username || "no login yet"}
+              </p>
             </td>
             <td className="px-4 py-4 text-sm">
               <p className="font-semibold text-foreground">
@@ -1965,7 +1967,8 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             </td>
             <td className="px-4 py-4 text-sm text-muted-foreground">
               <p>{item.phone || "—"}</p>
-              <p>{item.city || item.email || ""}</p>
+              <p className="break-all">{item.email || "Email not added"}</p>
+              <p>{item.city || "City not added"}</p>
             </td>
             <td className="px-4 py-4 font-semibold">
               {Number(item.totalIds || 0).toLocaleString("en-IN")}
@@ -2057,6 +2060,9 @@ function AdminNetworkTree({ items }: { items: RecordItem[] }) {
             <p className="truncate text-xs text-muted-foreground">
               {item.username ? `@${item.username}` : "No login account"} •{" "}
               {item.city || "City not added"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {item.email || "Email not added"} {item.phone ? `• ${item.phone}` : ""}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">

@@ -275,14 +275,18 @@ function DistributorAuth() {
               </>
             )}
             <label className="block text-sm font-semibold text-foreground">
-              {mode === "forgot" ? "Username or registered email" : "Username (not email)"}
+              {mode === "forgot" ? "Username or registered email" : "Username or email (login ID)"}
               <input
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 type="text"
                 name="distributor-username"
                 className="field"
-                placeholder={mode === "forgot" ? "Username or email address" : "Choose a username"}
+                placeholder={
+                  mode === "forgot"
+                    ? "Username or email address"
+                    : "Choose a username or use your email"
+                }
                 autoComplete={mode === "register" ? "new-password" : "username"}
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -291,8 +295,8 @@ function DistributorAuth() {
               />
               {mode === "register" && (
                 <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                  Use 4–80 letters, numbers, dot, underscore or hyphen. Keep email in the email
-                  field above.
+                  Use a username or your email address. The admin can see this login ID and help you
+                  retrieve it if you forget it.
                 </span>
               )}
             </label>

@@ -207,6 +207,62 @@ function GenerationPlan() {
         </div>
       </section>
 
+      <section className="bg-surface py-16 sm:py-20">
+        <div className="container-x grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.22em] text-primary uppercase">
+              Genealogy preview
+            </p>
+            <h2 className="mt-3 font-display text-3xl font-bold text-foreground md:text-4xl">
+              See how generations connect.
+            </h2>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
+              Every distributor joins under a sponsor ID. The admin panel and distributor dashboard
+              show the same sponsor-to-member chain, direct joins and generation depth.
+            </p>
+            <a
+              href="/distributor/login"
+              className="bg-brand mt-6 inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              Create distributor account <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+          <div className="overflow-x-auto rounded-3xl border border-border bg-card p-5 shadow-card sm:p-8">
+            <div className="mx-auto min-w-[620px]">
+              <div className="mx-auto flex w-48 flex-col items-center rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center">
+                <Network className="h-6 w-6 text-primary" />
+                <p className="mt-2 text-sm font-bold text-foreground">You / Sponsor ID</p>
+                <p className="mt-1 text-xs text-muted-foreground">Root distributor</p>
+              </div>
+              <div className="mx-auto h-8 w-px bg-primary/25" />
+              <div className="relative grid grid-cols-3 gap-4 before:absolute before:top-0 before:left-[16.66%] before:right-[16.66%] before:border-t before:border-primary/25">
+                {["Direct member A", "Direct member B", "Direct member C"].map((label) => (
+                  <div
+                    key={label}
+                    className="relative pt-5 text-center before:absolute before:top-0 before:left-1/2 before:h-5 before:border-l before:border-primary/25"
+                  >
+                    <div className="rounded-2xl border border-border bg-surface p-3">
+                      <Users className="mx-auto h-5 w-5 text-secondary" />
+                      <p className="mt-2 text-xs font-bold text-foreground">{label}</p>
+                      <p className="mt-1 text-[11px] text-primary">Generation 1</p>
+                    </div>
+                    <div className="mx-auto h-6 w-px bg-primary/20" />
+                    <div className="rounded-xl border border-dashed border-border bg-card p-2">
+                      <p className="text-[11px] font-semibold text-foreground">Downline members</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Generation 2+</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-5 text-center text-xs text-muted-foreground">
+                Admin sees the full tree with name, username, email, phone, sponsor ID, status and
+                generation level.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="rank-plan" className="scroll-mt-24 py-20 sm:py-24">
         <div className="container-x">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">

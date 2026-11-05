@@ -169,6 +169,36 @@ function BecomeDistributor() {
             </div>
           </div>
 
+          <div className="mt-6 grid gap-4 rounded-3xl border border-primary/15 bg-primary/5 p-5 sm:grid-cols-[1.2fr_0.8fr] sm:items-center sm:p-6">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
+                Distributor account centre
+              </p>
+              <h3 className="mt-2 font-display text-2xl font-bold text-foreground">
+                Create your account, get your ID and log in securely.
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Use a username or your email as the login ID. Add a sponsor ID to place yourself in
+                the right genealogy tree. Your account, sponsor and contact details remain available
+                to the RDG admin team.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 sm:justify-end">
+              <a
+                href="/distributor/login"
+                className="bg-brand inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-primary-foreground"
+              >
+                Create account <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href="/distributor/login"
+                className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card px-5 py-3 text-sm font-semibold text-primary"
+              >
+                Distributor login <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-xs leading-relaxed text-muted-foreground">
             <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <p>

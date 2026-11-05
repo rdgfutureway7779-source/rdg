@@ -65,6 +65,17 @@ export async function migrate() {
     .map((statement) => statement.trim())
     .filter(Boolean);
   for (const statement of statements) await activePool.query(statement);
+  const [distributorUsernameColumn] = await activePool.query(
+    "SHOW COLUMNS FROM distributor_accounts LIKE 'username'",
+  );
+  if (
+    distributorUsernameColumn[0] &&
+    !String(distributorUsernameColumn[0].Type).includes("varchar(190)")
+  ) {
+    await activePool.query(
+      "ALTER TABLE distributor_accounts MODIFY COLUMN username VARCHAR(190) NOT NULL",
+    );
+  }
   const [paymentReferenceColumn] = await activePool.query(
     "SHOW COLUMNS FROM customer_orders LIKE 'payment_reference'",
   );

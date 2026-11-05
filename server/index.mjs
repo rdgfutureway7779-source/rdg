@@ -342,8 +342,11 @@ const distributorRegisterSchema = z
       .string()
       .trim()
       .min(4)
-      .max(80)
-      .regex(/^[a-zA-Z0-9._-]+$/, "Use only letters, numbers, dot, underscore or hyphen."),
+      .max(190)
+      .refine(
+        (value) => /^[a-zA-Z0-9._-]+$/.test(value) || z.string().email().safeParse(value).success,
+        "Use a username or a valid email address.",
+      ),
     email: z.string().email().max(190),
     phone: requiredMobileSchema,
     city: z.string().trim().min(2).max(120),
@@ -371,7 +374,7 @@ const distributorRegisterSchema = z
     }
   });
 const distributorLoginSchema = z.object({
-  username: z.string().trim().min(1).max(80),
+  username: z.string().trim().min(1).max(190),
   password: z.string().min(1).max(120),
 });
 const distributorResetPasswordSchema = z.object({
@@ -1320,9 +1323,9 @@ app.post(
          WHERE m2.distributor_id = d.id
          ORDER BY m2.expires_at DESC, m2.id DESC LIMIT 1
        )
-       WHERE a.username = ?
+       WHERE LOWER(a.username) = ? OR LOWER(d.email) = ?
        LIMIT 1`,
-      [input.data.username.toLowerCase()],
+      [input.data.username.toLowerCase(), input.data.username.toLowerCase()],
     );
     const account = rows[0];
     if (!account || !(await bcrypt.compare(input.data.password, account.password_hash))) {
@@ -1854,10 +1857,10 @@ app.get(
     const where = [];
     if (search) {
       where.push(
-        "(d.distributor_code LIKE ? OR d.name LIKE ? OR d.phone LIKE ? OR d.email LIKE ?)",
+        "(d.distributor_code LIKE ? OR d.name LIKE ? OR d.phone LIKE ? OR d.email LIKE ? OR a.username LIKE ? OR sponsorAccount.username LIKE ?)",
       );
       const term = `%${search}%`;
-      params.push(term, term, term, term);
+      params.push(term, term, term, term, term, term);
     }
     const [rows] = await query(
       `SELECT d.*,
