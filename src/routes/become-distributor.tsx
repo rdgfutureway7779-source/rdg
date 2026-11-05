@@ -160,9 +160,11 @@ function BecomeDistributor() {
                         {bonus.detail}
                       </p>
                     </div>
-                    <span className="shrink-0 text-right text-xs font-bold text-primary">
-                      {bonus.value}
-                    </span>
+                    {bonus.value ? (
+                      <span className="shrink-0 text-right text-xs font-bold text-primary">
+                        {bonus.value}
+                      </span>
+                    ) : null}
                   </div>
                 ))}
               </div>

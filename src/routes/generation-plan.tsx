@@ -551,9 +551,11 @@ function GenerationPlan() {
                   <span className="bg-gold flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-bold text-gold-foreground">
                     {index + 1}
                   </span>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                    {bonus.value}
-                  </span>
+                  {bonus.value ? (
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                      {bonus.value}
+                    </span>
+                  ) : null}
                 </div>
                 <h3 className="mt-5 font-display text-lg font-bold text-foreground">
                   {bonus.name}

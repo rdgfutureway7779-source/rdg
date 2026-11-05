@@ -519,7 +519,7 @@ export const bonuses = [
   {
     name: "Performance Bonus/Award reward bonus",
     detail: "Paid on personal and group performance each month.",
-    value: "5% – 25%",
+    value: null,
   },
   {
     name: "Generation Bonus",
