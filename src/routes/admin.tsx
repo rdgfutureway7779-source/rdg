@@ -2035,8 +2035,18 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             <td className="px-4 py-4">
               <StatusBadge status={item.status} />
             </td>
-            <td className="px-4 py-4">
-              <div className="flex flex-col items-start gap-2">
+            <td className="min-w-[220px] px-4 py-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => open(item)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/20"
+                  aria-label={`Edit login for ${item.name}`}
+                  title="Add or edit username and password"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span>Edit login</span>
+                </button>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -2048,7 +2058,15 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
                     <Network className="h-4 w-4" />
                     <span>View tree</span>
                   </button>
-                  <RowActions onEdit={() => open(item)} onDelete={() => remove(item.id)} />
+                  <button
+                    type="button"
+                    onClick={() => remove(item.id)}
+                    className="rounded-lg p-2 text-destructive hover:bg-destructive/10"
+                    aria-label={`Delete ${item.name}`}
+                    title="Delete distributor"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </td>
