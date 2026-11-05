@@ -1953,8 +1953,10 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
         </Editor>
       )}
       <DataTable
+        minWidth="1180px"
         headers={[
           "Distributor",
+          "Username",
           "Sponsor / Team",
           "Contact",
           "IDs purchased",
@@ -1972,8 +1974,10 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             <td className="px-4 py-4">
               <p className="font-semibold">{item.name}</p>
               <p className="text-xs text-muted-foreground">{item.distributor_code}</p>
-              <p className="mt-1 text-xs text-primary">
-                Login ID: {item.username || "no login yet"}
+            </td>
+            <td className="px-4 py-4 text-sm">
+              <p className="break-all font-semibold text-primary">
+                {item.username || "No login account"}
               </p>
             </td>
             <td className="px-4 py-4 text-sm">
@@ -3515,10 +3519,18 @@ function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
     </div>
   );
 }
-function DataTable({ headers, children }: { headers: string[]; children: ReactNode }) {
+function DataTable({
+  headers,
+  children,
+  minWidth = "720px",
+}: {
+  headers: string[];
+  children: ReactNode;
+  minWidth?: string;
+}) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
-      <table className="w-full min-w-[720px] text-left text-sm">
+      <table className="w-full text-left text-sm" style={{ minWidth }}>
         <thead className="bg-surface text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           <tr>
             {headers.map((header) => (
