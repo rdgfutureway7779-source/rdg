@@ -238,17 +238,22 @@ function GenerationPlan() {
                 Sponsor-to-member tree preview
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                See how your sponsor ID connects direct joins and downline generations.
+                See how your sponsor ID connects direct joins and downline generations. Click any
+                card to create or access an account.
               </p>
             </div>
             <div className="mx-auto min-w-[620px]">
-              <div className="mx-auto flex w-48 flex-col items-center rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center">
+              <a
+                href="#distributor-access"
+                className="mx-auto flex w-48 flex-col items-center rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center transition-shadow hover:shadow-soft"
+                aria-label="Create or access a distributor account"
+              >
                 <span className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/20 bg-white p-1">
                   <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
                 </span>
                 <p className="mt-2 text-sm font-bold text-foreground">Your name</p>
                 <p className="mt-1 text-xs text-primary">Sponsor ID: RDG-ROOT-001</p>
-              </div>
+              </a>
               <div className="mx-auto h-8 w-px bg-primary/25" />
               <div className="relative grid grid-cols-3 gap-4 before:absolute before:top-0 before:left-[16.66%] before:right-[16.66%] before:border-t before:border-primary/25">
                 {["Member name A", "Member name B", "Member name C"].map((label, index) => (
@@ -256,7 +261,11 @@ function GenerationPlan() {
                     key={label}
                     className="relative pt-5 text-center before:absolute before:top-0 before:left-1/2 before:h-5 before:border-l before:border-primary/25"
                   >
-                    <div className="rounded-2xl border border-border bg-surface p-3">
+                    <a
+                      href="#distributor-access"
+                      className="block rounded-2xl border border-border bg-surface p-3 transition-shadow hover:shadow-soft"
+                      aria-label={`Create or access an account under ${label}`}
+                    >
                       <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border border-primary/15 bg-white p-1">
                         <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
                       </span>
@@ -264,9 +273,13 @@ function GenerationPlan() {
                       <p className="mt-1 text-[11px] text-primary">
                         Sponsor ID: RDG-{String(index + 1).padStart(3, "0")}
                       </p>
-                    </div>
+                    </a>
                     <div className="mx-auto h-6 w-px bg-primary/20" />
-                    <div className="rounded-xl border border-dashed border-border bg-card p-2">
+                    <a
+                      href="#distributor-access"
+                      className="block rounded-xl border border-dashed border-border bg-card p-2 transition-shadow hover:shadow-soft"
+                      aria-label="Create or access a downline distributor account"
+                    >
                       <span className="mx-auto flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white p-1">
                         <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
                       </span>
@@ -274,7 +287,7 @@ function GenerationPlan() {
                         Downline name
                       </p>
                       <p className="mt-1 text-[10px] text-primary">Sponsor ID: RDG-00X</p>
-                    </div>
+                    </a>
                   </div>
                 ))}
               </div>
@@ -287,7 +300,7 @@ function GenerationPlan() {
         </div>
       </section>
 
-      <section className="py-4 sm:py-8">
+      <section id="distributor-access" className="scroll-mt-28 py-4 sm:py-8">
         <div className="container-x">
           <div className="mx-auto mb-8 max-w-2xl text-center">
             <p className="text-xs font-semibold tracking-[0.22em] text-primary uppercase">
