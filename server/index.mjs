@@ -2508,34 +2508,37 @@ app.post(
         return fail(res, "The captured payment does not match an RDG package.", 422);
       }
 
-      const [[intent]] = await query(
-        "SELECT * FROM distributor_payment_intents WHERE razorpay_order_id = ? LIMIT 1",
-        [payment.order_id],
-      );
-      if (intent) {
-        if (Number(payment.amount) !== Number(intent.package_value) * 100) {
-          return fail(res, "The captured payment does not match the registration package.", 422);
+      let distributor = null;
+      if (input.distributorId) {
+        [[distributor]] = await query(
+          "SELECT id, name, email, phone FROM distributors WHERE id = ? LIMIT 1",
+          [input.distributorId],
+        );
+        if (!distributor) return fail(res, "Select a valid distributor.", 422);
+      } else {
+        const [[intent]] = await query(
+          "SELECT * FROM distributor_payment_intents WHERE razorpay_order_id = ? LIMIT 1",
+          [payment.order_id],
+        );
+        if (intent) {
+          if (Number(payment.amount) !== Number(intent.package_value) * 100) {
+            return fail(res, "The captured payment does not match the registration package.", 422);
+          }
+          const completed = await completeDistributorPaymentIntent(intent, input.paymentId);
+          await activity(req.user, "sync", "razorpay_registration", completed.id, {
+            distributorId: completed.id,
+            paymentId: input.paymentId,
+            amount: packageValue,
+          });
+          return ok(res, {
+            registrationSynced: true,
+            paymentId: input.paymentId,
+            distributor: distributorProfile(completed),
+          });
         }
-        const completed = await completeDistributorPaymentIntent(intent, input.paymentId);
-        await activity(req.user, "sync", "razorpay_registration", completed.id, {
-          distributorId: completed.id,
-          paymentId: input.paymentId,
-          amount: packageValue,
-        });
-        return ok(res, {
-          registrationSynced: true,
-          paymentId: input.paymentId,
-          distributor: distributorProfile(completed),
-        });
+        return fail(res, "Select a valid distributor to link this payment.", 422);
       }
 
-      if (!input.distributorId)
-        return fail(res, "Select a valid distributor to link this payment.", 422);
-      const [[distributor]] = await query(
-        "SELECT id, name, email, phone FROM distributors WHERE id = ? LIMIT 1",
-        [input.distributorId],
-      );
-      if (!distributor) return fail(res, "Select a valid distributor.", 422);
       const existing = await findDistributorByPaymentReference(input.paymentId);
       if (existing) {
         if (Number(existing.id) !== Number(distributor.id)) {
