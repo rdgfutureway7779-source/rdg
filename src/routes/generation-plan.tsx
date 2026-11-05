@@ -28,6 +28,7 @@ import rankSymbol12 from "@/assets/rank-symbols/level-12.png";
 import rankSymbol13 from "@/assets/rank-symbols/level-13.png";
 import rankSymbol14 from "@/assets/rank-symbols/level-14.png";
 import rankSymbol15 from "@/assets/rank-symbols/level-15.png";
+import logoSmall from "@/assets/optimized/logo-small.webp";
 import { bonuses, directReferralPlans, planLevels } from "@/data/site";
 import DistributorAuth from "@/routes/distributor-auth";
 
@@ -231,33 +232,44 @@ function GenerationPlan() {
           <div className="overflow-x-auto rounded-3xl border border-border bg-card p-5 shadow-card sm:p-8">
             <div className="mx-auto min-w-[620px]">
               <div className="mx-auto flex w-48 flex-col items-center rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center">
-                <Network className="h-6 w-6 text-primary" />
-                <p className="mt-2 text-sm font-bold text-foreground">You / Sponsor ID</p>
-                <p className="mt-1 text-xs text-muted-foreground">Root distributor</p>
+                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/20 bg-white p-1">
+                  <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
+                </span>
+                <p className="mt-2 text-sm font-bold text-foreground">Your name</p>
+                <p className="mt-1 text-xs text-primary">Sponsor ID: RDG-ROOT-001</p>
               </div>
               <div className="mx-auto h-8 w-px bg-primary/25" />
               <div className="relative grid grid-cols-3 gap-4 before:absolute before:top-0 before:left-[16.66%] before:right-[16.66%] before:border-t before:border-primary/25">
-                {["Direct member A", "Direct member B", "Direct member C"].map((label) => (
+                {["Member name A", "Member name B", "Member name C"].map((label, index) => (
                   <div
                     key={label}
                     className="relative pt-5 text-center before:absolute before:top-0 before:left-1/2 before:h-5 before:border-l before:border-primary/25"
                   >
                     <div className="rounded-2xl border border-border bg-surface p-3">
-                      <Users className="mx-auto h-5 w-5 text-secondary" />
+                      <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border border-primary/15 bg-white p-1">
+                        <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
+                      </span>
                       <p className="mt-2 text-xs font-bold text-foreground">{label}</p>
-                      <p className="mt-1 text-[11px] text-primary">Generation 1</p>
+                      <p className="mt-1 text-[11px] text-primary">
+                        Sponsor ID: RDG-{String(index + 1).padStart(3, "0")}
+                      </p>
                     </div>
                     <div className="mx-auto h-6 w-px bg-primary/20" />
                     <div className="rounded-xl border border-dashed border-border bg-card p-2">
-                      <p className="text-[11px] font-semibold text-foreground">Downline members</p>
-                      <p className="mt-1 text-[10px] text-muted-foreground">Generation 2+</p>
+                      <span className="mx-auto flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white p-1">
+                        <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
+                      </span>
+                      <p className="mt-2 text-[11px] font-semibold text-foreground">
+                        Downline name
+                      </p>
+                      <p className="mt-1 text-[10px] text-primary">Sponsor ID: RDG-00X</p>
                     </div>
                   </div>
                 ))}
               </div>
               <p className="mt-5 text-center text-xs text-muted-foreground">
-                Admin sees the full tree with name, username, email, phone, sponsor ID, status and
-                generation level.
+                Each tree card shows only the member name and sponsor ID. Contact and payment
+                details stay private in the admin records.
               </p>
             </div>
           </div>

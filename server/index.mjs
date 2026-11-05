@@ -24,6 +24,7 @@ const jwtSecret = process.env.JWT_SECRET;
 const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
 const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
 const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+const razorpayWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 const databaseImageLimit = 8 * 1024 * 1024;
 
 if (!jwtSecret || jwtSecret.length < 24)
@@ -64,7 +65,14 @@ app.use(
   }),
 );
 app.use(cors({ origin: corsOrigin.split(",").map((value) => value.trim()), credentials: true }));
-app.use(express.json({ limit: "3mb" }));
+app.use(
+  express.json({
+    limit: "3mb",
+    verify: (req, _res, buffer) => {
+      req.rawBody = Buffer.from(buffer);
+    },
+  }),
+);
 app.use(cookieParser());
 app.use("/uploads", express.static(uploadDir, { maxAge: "7d" }));
 app.use(express.static(frontendDist, { index: false }));
@@ -373,6 +381,30 @@ const distributorRegisterSchema = z
       });
     }
   });
+const distributorPaymentOrderSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  username: z
+    .string()
+    .trim()
+    .min(4)
+    .max(190)
+    .refine(
+      (value) => /^[a-zA-Z0-9._-]+$/.test(value) || z.string().email().safeParse(value).success,
+      "Use a username or a valid email address.",
+    ),
+  email: z.string().email().max(190),
+  phone: requiredMobileSchema,
+  city: z.string().trim().min(2).max(120),
+  sponsorCode: z.string().trim().max(80).optional().nullable(),
+  packageValue: z.coerce
+    .number()
+    .int()
+    .refine(
+      (value) => distributorPackagePlans.some((item) => item.packageValue === value),
+      "Select a valid distributor package.",
+    ),
+  password: z.string().min(8).max(120),
+});
 const distributorLoginSchema = z.object({
   username: z.string().trim().min(1).max(190),
   password: z.string().min(1).max(120),
@@ -506,6 +538,8 @@ const distributorSchema = z.object({
   phone: optionalMobileSchema,
   city: z.string().max(120).optional().nullable(),
   sponsorCode: z.string().max(80).optional().nullable(),
+  username: z.string().trim().min(4).max(190).optional().nullable().or(z.literal("")),
+  password: z.string().min(8).max(120).optional().nullable().or(z.literal("")),
   status: z.enum(["active", "inactive", "blocked"]).default("active"),
   notes: z.string().max(5000).optional().nullable(),
 });
@@ -521,6 +555,10 @@ const transactionSchema = z.object({
   paymentStatus: z.enum(["pending", "paid", "failed", "refunded"]).default("pending"),
   transactionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   notes: z.string().max(5000).optional().nullable(),
+});
+const razorpaySyncSchema = z.object({
+  distributorId: z.coerce.number().int().positive(),
+  paymentId: razorpayPaymentIdSchema,
 });
 const gallerySchema = z.object({
   title: z.string().trim().min(2).max(255),
@@ -924,6 +962,157 @@ async function verifyCapturedRazorpayPayment({ orderId, paymentId, signature, ex
   return payment;
 }
 
+async function findDistributorByPaymentReference(paymentId) {
+  const [[row]] = await query(
+    `SELECT d.id, a.id AS accountId, a.username, d.distributor_code AS distributorCode,
+       d.name, d.email, d.phone, d.city, d.sponsor_code AS sponsorCode, d.status,
+       m.amount AS membershipAmount, m.status AS membershipStatus,
+       m.payment_status AS membershipPaymentStatus, m.starts_at AS membershipStartsAt,
+       m.expires_at AS membershipExpiresAt,
+       CASE WHEN m.id IS NULL THEN 'not_started'
+            WHEN m.expires_at < CURDATE() THEN 'expired'
+            ELSE m.status END AS membershipCurrentStatus
+     FROM distributor_transactions t
+     INNER JOIN distributors d ON d.id = t.distributor_id
+     LEFT JOIN distributor_accounts a ON a.distributor_id = d.id
+     LEFT JOIN distributor_memberships m ON m.id = (
+       SELECT m2.id FROM distributor_memberships m2
+       WHERE m2.distributor_id = d.id
+       ORDER BY m2.expires_at DESC, m2.id DESC LIMIT 1
+     )
+     WHERE t.reference_no = ? AND t.transaction_type = 'id_purchase'
+       AND t.payment_status = 'paid'
+     LIMIT 1`,
+    [paymentId],
+  );
+  return row || null;
+}
+
+async function completeDistributorPaymentIntent(intent, paymentId) {
+  const existing = await findDistributorByPaymentReference(paymentId);
+  if (existing) return existing;
+
+  const selectedPackage = distributorPackagePlans.find(
+    (item) => item.packageValue === Number(intent.package_value),
+  );
+  if (!selectedPackage) throw new Error("The payment package is not valid.");
+  const sponsorCode = await resolveSponsorCode(intent.sponsor_code);
+  if (intent.sponsor_code && !sponsorCode) throw new Error("The sponsor ID is no longer active.");
+  const distributorCode = await generateDistributorCode();
+  const distributor = await transaction(async (connection) => {
+    const [intentRows] = await connection.execute(
+      "SELECT * FROM distributor_payment_intents WHERE id = ? FOR UPDATE",
+      [intent.id],
+    );
+    const lockedIntent = intentRows[0];
+    if (!lockedIntent) throw new Error("Payment registration details were not found.");
+    if (lockedIntent.status === "paid" && lockedIntent.distributor_id) {
+      const [existingRows] = await connection.execute(
+        `SELECT d.id, a.id AS accountId, a.username, d.distributor_code AS distributorCode,
+           d.name, d.email, d.phone, d.city, d.sponsor_code AS sponsorCode, d.status
+         FROM distributors d INNER JOIN distributor_accounts a ON a.distributor_id = d.id
+         WHERE d.id = ? LIMIT 1`,
+        [lockedIntent.distributor_id],
+      );
+      return existingRows[0] || null;
+    }
+    const [distributorResult] = await connection.execute(
+      `INSERT INTO distributors
+         (distributor_code, name, email, phone, city, sponsor_code, status)
+       VALUES (?, ?, ?, ?, ?, ?, 'active')`,
+      [
+        distributorCode,
+        lockedIntent.name,
+        lockedIntent.email,
+        lockedIntent.phone,
+        lockedIntent.city,
+        sponsorCode,
+      ],
+    );
+    const [accountResult] = await connection.execute(
+      `INSERT INTO distributor_accounts (distributor_id, username, password_hash)
+       VALUES (?, ?, ?)`,
+      [distributorResult.insertId, lockedIntent.username, lockedIntent.password_hash],
+    );
+    await connection.execute(
+      `INSERT INTO distributor_memberships
+         (distributor_id, amount, status, payment_status, payment_method, transaction_reference,
+          starts_at, expires_at)
+       VALUES (?, 0, 'active', 'paid', 'razorpay', ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR))`,
+      [distributorResult.insertId, paymentId],
+    );
+    await connection.execute(
+      `INSERT INTO distributor_transactions
+         (distributor_id, transaction_type, reference_no, id_count, package_value, amount,
+          payment_method, payment_status, transaction_date, notes)
+       VALUES (?, 'id_purchase', ?, 1, ?, ?, 'razorpay', 'paid', CURDATE(), ?)`,
+      [
+        distributorResult.insertId,
+        paymentId,
+        selectedPackage.packageValue,
+        selectedPackage.packageValue,
+        `Registration includes ${selectedPackage.packageCount} package(s). Payment captured by Razorpay webhook.`,
+      ],
+    );
+    await connection.execute(
+      `UPDATE distributor_payment_intents
+       SET razorpay_payment_id = ?, distributor_id = ?, status = 'paid'
+       WHERE id = ?`,
+      [paymentId, distributorResult.insertId, lockedIntent.id],
+    );
+    return {
+      id: distributorResult.insertId,
+      accountId: accountResult.insertId,
+      username: lockedIntent.username,
+      distributorCode,
+      name: lockedIntent.name,
+      email: lockedIntent.email,
+      phone: lockedIntent.phone,
+      city: lockedIntent.city,
+      sponsorCode,
+      status: "active",
+    };
+  });
+  if (!distributor) throw new Error("Distributor account could not be completed.");
+  return distributor;
+}
+
+function verifyRazorpayWebhookSignature(rawBody, signature) {
+  if (!razorpayWebhookSecret || !rawBody || !signature) return false;
+  const expected = crypto.createHmac("sha256", razorpayWebhookSecret).update(rawBody).digest("hex");
+  const expectedBuffer = Buffer.from(expected, "utf8");
+  const receivedBuffer = Buffer.from(String(signature), "utf8");
+  return (
+    expectedBuffer.length === receivedBuffer.length &&
+    crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
+  );
+}
+
+app.post(
+  "/api/payments/razorpay/webhook",
+  asyncRoute(async (req, res) => {
+    if (!verifyRazorpayWebhookSignature(req.rawBody, req.headers["x-razorpay-signature"])) {
+      return fail(res, "Invalid Razorpay webhook signature.", 401);
+    }
+    const event = req.body?.event;
+    if (event !== "payment.captured" && event !== "order.paid") {
+      return ok(res, { ignored: true, event });
+    }
+    const payment = req.body?.payload?.payment?.entity;
+    if (!payment?.id || payment.status !== "captured") return ok(res, { ignored: true });
+    const [[intent]] = await query(
+      "SELECT * FROM distributor_payment_intents WHERE razorpay_order_id = ? LIMIT 1",
+      [payment.order_id],
+    );
+    if (!intent) return ok(res, { ignored: true, reason: "registration_intent_not_found" });
+    if (Number(payment.amount) !== Number(intent.package_value) * 100) {
+      return fail(res, "Razorpay amount does not match the registration package.", 422);
+    }
+    const distributor = await completeDistributorPaymentIntent(intent, payment.id);
+    return ok(res, { processed: true, distributor: distributorProfile(distributor) });
+  }),
+);
+
 async function createCustomerOrderRecord({
   customerId,
   cart,
@@ -1123,8 +1312,20 @@ app.post(
   "/api/distributor/payments/order",
   loginLimiter,
   asyncRoute(async (req, res) => {
-    const input = distributorPackagePaymentOrderSchema.safeParse(req.body);
-    if (!input.success) return fail(res, "Select a valid distributor package.", 422);
+    const input = distributorPaymentOrderSchema.safeParse(req.body);
+    if (!input.success)
+      return fail(res, "Enter valid account details and select a distributor package.", 422);
+    const email = input.data.email.toLowerCase();
+    const username = input.data.username.toLowerCase();
+    const [[existingAccount]] = await query(
+      "SELECT id FROM distributor_accounts WHERE username = ? LIMIT 1",
+      [username],
+    );
+    if (existingAccount)
+      return fail(res, "That username is already registered. Please choose another.", 409);
+    const sponsorCode = await resolveSponsorCode(input.data.sponsorCode);
+    if (input.data.sponsorCode && !sponsorCode)
+      return fail(res, "Enter a valid active sponsor ID.", 422);
     try {
       requireRazorpayConfig();
       const paymentOrder = await razorpayRequest("orders", {
@@ -1133,9 +1334,30 @@ app.post(
           amount: input.data.packageValue * 100,
           currency: "INR",
           receipt: `rdg_dist_${Date.now()}`.slice(0, 40),
-          notes: { package_value: String(input.data.packageValue) },
+          notes: {
+            package_value: String(input.data.packageValue),
+            username,
+            email,
+          },
         }),
       });
+      const passwordHash = await bcrypt.hash(input.data.password, 12);
+      await query(
+        `INSERT INTO distributor_payment_intents
+           (razorpay_order_id, name, username, email, phone, city, sponsor_code, password_hash, package_value)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          paymentOrder.id,
+          input.data.name,
+          username,
+          email,
+          input.data.phone,
+          input.data.city,
+          sponsorCode,
+          passwordHash,
+          input.data.packageValue,
+        ],
+      );
       return ok(res, {
         keyId: razorpayKeyId,
         orderId: paymentOrder.id,
@@ -1167,6 +1389,20 @@ app.post(
 
     const email = input.data.email.toLowerCase();
     const username = input.data.username.toLowerCase();
+    const selectedPackage = distributorPackagePlans.find(
+      (item) => item.packageValue === input.data.packageValue,
+    );
+    if (!selectedPackage) return fail(res, "Select a valid distributor package.", 422);
+    if (input.data.razorpayPaymentId) {
+      const completed = await findDistributorByPaymentReference(input.data.razorpayPaymentId);
+      if (completed) {
+        return ok(res, {
+          distributor: distributorProfile(completed),
+          package: selectedPackage,
+          packagePaymentStatus: "paid",
+        });
+      }
+    }
     const [[existingDistributor]] = await query(
       "SELECT a.id FROM distributor_accounts a WHERE a.username = ? LIMIT 1",
       [username],
@@ -1176,9 +1412,6 @@ app.post(
     const sponsorCode = await resolveSponsorCode(input.data.sponsorCode);
     if (input.data.sponsorCode && !sponsorCode)
       return fail(res, "Enter a valid active sponsor ID.", 422);
-    const selectedPackage = distributorPackagePlans.find(
-      (item) => item.packageValue === input.data.packageValue,
-    );
     const passwordHash = await bcrypt.hash(input.data.password, 12);
     const distributorCode = await generateDistributorCode();
     const hasOnlinePayment = Boolean(
@@ -1284,6 +1517,14 @@ app.post(
          ORDER BY expires_at DESC, id DESC LIMIT 1`,
         [distributor.id],
       );
+      if (hasOnlinePayment) {
+        await query(
+          `UPDATE distributor_payment_intents
+           SET razorpay_payment_id = ?, distributor_id = ?, status = 'paid'
+           WHERE razorpay_order_id = ?`,
+          [input.data.razorpayPaymentId, distributor.id, input.data.razorpayOrderId],
+        );
+      }
       return ok(
         res,
         {
@@ -2018,6 +2259,8 @@ app.post(
   asyncRoute(async (req, res) => {
     const input = validate(distributorSchema, req.body, res);
     if (!input) return;
+    if (input.username && !input.password)
+      return fail(res, "Enter a password when creating a distributor login.", 422);
     const sponsorCode = await resolveSponsorCode(input.sponsorCode);
     if (input.sponsorCode && !sponsorCode)
       return fail(res, "Enter a valid active sponsor ID.", 422);
@@ -2036,11 +2279,18 @@ app.post(
           input.notes || null,
         ],
       );
+      if (input.username) {
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        await query(
+          "INSERT INTO distributor_accounts (distributor_id, username, password_hash) VALUES (?, ?, ?)",
+          [result.insertId, input.username.toLowerCase(), passwordHash],
+        );
+      }
       await activity(req.user, "create", "distributor", result.insertId, { name: input.name });
       return ok(res, { id: result.insertId }, 201);
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY")
-        return fail(res, "That distributor ID already exists.", 409);
+        return fail(res, "That distributor ID or username already exists.", 409);
       throw error;
     }
   }),
@@ -2083,11 +2333,36 @@ app.put(
         ],
       );
       if (!result.affectedRows) return fail(res, "Distributor not found.", 404);
+      const [[account]] = await query(
+        "SELECT id FROM distributor_accounts WHERE distributor_id = ? LIMIT 1",
+        [id],
+      );
+      if (!account && input.username && !input.password)
+        return fail(res, "Enter a password to create this distributor login.", 422);
+      if (input.username && account) {
+        await query("UPDATE distributor_accounts SET username = ? WHERE id = ?", [
+          input.username.toLowerCase(),
+          account.id,
+        ]);
+      } else if (input.username && input.password) {
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        await query(
+          "INSERT INTO distributor_accounts (distributor_id, username, password_hash) VALUES (?, ?, ?)",
+          [id, input.username.toLowerCase(), passwordHash],
+        );
+      }
+      if (input.password && account) {
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        await query("UPDATE distributor_accounts SET password_hash = ? WHERE id = ?", [
+          passwordHash,
+          account.id,
+        ]);
+      }
       await activity(req.user, "update", "distributor", id, { name: input.name });
       return ok(res, { id });
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY")
-        return fail(res, "That distributor ID already exists.", 409);
+        return fail(res, "That distributor ID or username already exists.", 409);
       throw error;
     }
   }),
@@ -2206,6 +2481,72 @@ app.get(
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", "attachment; filename=rdg-transactions.csv");
     return res.send([header.map(escapeCsv).join(","), ...lines].join("\n"));
+  }),
+);
+
+app.post(
+  "/api/admin/transactions/razorpay-sync",
+  requireAuth,
+  allowRoles("super_admin", "enquiry_manager"),
+  asyncRoute(async (req, res) => {
+    const input = validate(razorpaySyncSchema, req.body, res);
+    if (!input) return;
+    const [[distributor]] = await query(
+      "SELECT id, name, email, phone FROM distributors WHERE id = ? LIMIT 1",
+      [input.distributorId],
+    );
+    if (!distributor) return fail(res, "Select a valid distributor.", 422);
+    try {
+      const payment = await razorpayRequest(`payments/${encodeURIComponent(input.paymentId)}`, {
+        method: "GET",
+      });
+      if (payment.status !== "captured")
+        return fail(res, "This Razorpay payment is not captured.", 422);
+      const order = payment.order_id
+        ? await razorpayRequest(`orders/${encodeURIComponent(payment.order_id)}`, { method: "GET" })
+        : null;
+      const packageValue = Number(payment.amount) / 100;
+      const selectedPackage = distributorPackagePlans.find(
+        (item) => item.packageValue === packageValue,
+      );
+      if (!selectedPackage || !order || Number(order.amount) !== Number(payment.amount)) {
+        return fail(res, "The captured payment does not match an RDG package.", 422);
+      }
+      const existing = await findDistributorByPaymentReference(input.paymentId);
+      if (existing) {
+        if (Number(existing.id) !== Number(distributor.id)) {
+          return fail(res, "This payment is already linked to another distributor.", 409);
+        }
+        return ok(res, { alreadySynced: true, distributor: distributorProfile(existing) });
+      }
+      const [result] = await query(
+        `INSERT INTO distributor_transactions
+           (distributor_id, transaction_type, reference_no, id_count, package_value, amount,
+            payment_method, payment_status, transaction_date, notes, created_by)
+         VALUES (?, 'id_purchase', ?, 1, ?, ?, 'razorpay', 'paid', CURDATE(), ?, ?)`,
+        [
+          distributor.id,
+          input.paymentId,
+          packageValue,
+          packageValue,
+          `Captured Razorpay payment synced by admin. Customer: ${payment.email || distributor.email || "not provided"}.`,
+          req.user.id,
+        ],
+      );
+      await syncDistributorPackageAccess(distributor.id, "paid", "razorpay", input.paymentId);
+      await activity(req.user, "sync", "razorpay_payment", result.insertId, {
+        distributorId: distributor.id,
+        paymentId: input.paymentId,
+        amount: packageValue,
+      });
+      return ok(res, { id: result.insertId, packageValue, paymentId: input.paymentId }, 201);
+    } catch (error) {
+      return fail(
+        res,
+        error instanceof Error ? error.message : "Unable to sync Razorpay payment.",
+        503,
+      );
+    }
   }),
 );
 

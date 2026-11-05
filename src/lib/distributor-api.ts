@@ -90,11 +90,20 @@ export type DistributorPaymentOrder = {
   packageValue: number;
 };
 
-export async function createDistributorPaymentOrder(packageValue: number) {
+export async function createDistributorPaymentOrder(payload: {
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  city: string;
+  sponsorCode?: string;
+  packageValue: number;
+  password: string;
+}) {
   const data = await distributorApi<DistributorPaymentOrder>("/api/distributor/payments/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ packageValue }),
+    body: JSON.stringify(payload),
   });
   return data;
 }

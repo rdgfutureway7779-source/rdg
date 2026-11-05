@@ -55,7 +55,16 @@ function DistributorAuth() {
           setLoading(false);
           return;
         }
-        const paymentOrder = await createDistributorPaymentOrder(Number(packageValue));
+        const paymentOrder = await createDistributorPaymentOrder({
+          name,
+          username,
+          email,
+          phone,
+          city,
+          sponsorCode,
+          packageValue: Number(packageValue),
+          password,
+        });
         await loadRazorpayCheckout();
         if (!window.Razorpay) throw new Error("Razorpay checkout is unavailable.");
         const checkout = new window.Razorpay({

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { PasswordInput } from "@/components/shared/PasswordInput";
+import logoSmall from "@/assets/optimized/logo-small.webp";
 import {
   Activity,
   ArrowUpRight,
@@ -1690,6 +1691,7 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
   const [items, setItems] = useState<RecordItem[]>([]);
   const [networkItems, setNetworkItems] = useState<RecordItem[]>([]);
   const [editing, setEditing] = useState<RecordItem | null>(null);
+  const [treePreview, setTreePreview] = useState<RecordItem | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [search, setSearch] = useState("");
   const blank = {
@@ -1699,6 +1701,8 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
     phone: "",
     city: "",
     sponsorCode: "",
+    username: "",
+    password: "",
     status: "active",
     notes: "",
   };
@@ -1729,6 +1733,8 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             phone: item.phone || "",
             city: item.city || "",
             sponsorCode: item.sponsor_code || item.sponsorCode || "",
+            username: item.username || "",
+            password: "",
             status: item.status || "active",
             notes: item.notes || "",
           }
@@ -1857,6 +1863,22 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             <p className="-mt-3 text-xs text-muted-foreground sm:col-span-2">
               Enter the existing distributor ID whose team this distributor should join. Leave blank
               only for a top-level distributor.
+            </p>
+            <TextField
+              label="Login username or email"
+              type="text"
+              value={form.username}
+              onChange={(value) => setForm({ ...form, username: value })}
+            />
+            <TextField
+              label={editing ? "New password (optional)" : "Login password"}
+              type="password"
+              value={form.password}
+              onChange={(value) => setForm({ ...form, password: value })}
+            />
+            <p className="-mt-3 text-xs text-muted-foreground sm:col-span-2">
+              Add login details so the distributor can access the dashboard. Leave password blank
+              while editing if it should remain unchanged.
             </p>
             {editing && (
               <div className="rounded-xl border border-border bg-surface p-4 sm:col-span-2">
@@ -2011,7 +2033,19 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
             </td>
             <td className="px-4 py-4">
               <div className="flex flex-col items-start gap-2">
-                <RowActions onEdit={() => open(item)} onDelete={() => remove(item.id)} />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTreePreview(item)}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-secondary hover:bg-secondary/10"
+                    aria-label={`View genealogy tree for ${item.name}`}
+                    title="View genealogy tree"
+                  >
+                    <Network className="h-4 w-4" />
+                    <span>View tree</span>
+                  </button>
+                  <RowActions onEdit={() => open(item)} onDelete={() => remove(item.id)} />
+                </div>
               </div>
             </td>
           </tr>
@@ -2022,12 +2056,27 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
           <EmptyState label="No distributors found. Add the first distributor ID to start tracking accounts." />
         </div>
       )}
+      {treePreview && (
+        <AdminNetworkTree
+          items={networkItems}
+          focusCode={treePreview.distributor_code || treePreview.distributorCode}
+          onClose={() => setTreePreview(null)}
+        />
+      )}
       <AdminNetworkTree items={networkItems} />
     </ModuleShell>
   );
 }
 
-function AdminNetworkTree({ items }: { items: RecordItem[] }) {
+function AdminNetworkTree({
+  items,
+  focusCode,
+  onClose,
+}: {
+  items: RecordItem[];
+  focusCode?: string;
+  onClose?: () => void;
+}) {
   if (!items.length) return null;
   const bySponsor = new Map<string, RecordItem[]>();
   const knownCodes = new Set(
@@ -2041,6 +2090,9 @@ function AdminNetworkTree({ items }: { items: RecordItem[] }) {
   });
   const roots = items.filter((item) => {
     const sponsor = String(item.sponsor_code || "").toUpperCase();
+    if (focusCode) {
+      return String(item.distributor_code || "").toUpperCase() === focusCode.toUpperCase();
+    }
     return !sponsor || !knownCodes.has(sponsor);
   });
 
@@ -2053,21 +2105,26 @@ function AdminNetworkTree({ items }: { items: RecordItem[] }) {
       <div key={`${item.id}-${depth}`} className={depth ? "border-l border-primary/20 pl-4" : ""}>
         <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
+            <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full border border-primary/15 bg-white p-1">
+              <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
+            </span>
             <p className="truncate font-semibold text-foreground">
               {item.name}{" "}
-              <span className="font-normal text-muted-foreground">({item.distributor_code})</span>
+              <span className="font-normal text-primary">
+                (Sponsor ID: {item.distributor_code})
+              </span>
             </p>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="hidden truncate text-xs text-muted-foreground">
               {item.username ? `@${item.username}` : "No login account"} •{" "}
               {item.city || "City not added"}
             </p>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="hidden truncate text-xs text-muted-foreground">
               {item.email || "Email not added"} {item.phone ? `• ${item.phone}` : ""}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="hidden flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-              {depth ? `Level ${depth}` : "Top level"}
+              {depth ? `Level ${depth}` : focusCode ? "Selected distributor" : "Top level"}
             </span>
             <span className="rounded-full bg-secondary/10 px-2.5 py-1 font-semibold text-secondary">
               {children.length} direct
@@ -2091,11 +2148,24 @@ function AdminNetworkTree({ items }: { items: RecordItem[] }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
-            Network hierarchy
+            {focusCode ? "Distributor genealogy preview" : "Network hierarchy"}
           </p>
-          <h3 className="mt-2 font-display text-2xl font-bold">All distributor chains</h3>
+          <h3 className="mt-2 font-display text-2xl font-bold">
+            {focusCode ? "Selected distributor tree" : "All distributor chains"}
+          </h3>
         </div>
-        <p className="text-sm text-muted-foreground">{items.length} accounts in the network</p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {focusCode
+              ? "This distributor and all downstream members"
+              : `${items.length} accounts in the network`}
+          </p>
+          {onClose && (
+            <button type="button" onClick={onClose} className={buttonSecondary}>
+              Close preview
+            </button>
+          )}
+        </div>
       </div>
       <div className="mt-5 space-y-3">
         {roots.map((item) => branch(item, 0, new Set<number>()))}
@@ -2111,6 +2181,9 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
   const [distributorFilter, setDistributorFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [razorpayPaymentId, setRazorpayPaymentId] = useState("");
+  const [razorpayDistributorId, setRazorpayDistributorId] = useState("");
+  const [syncingRazorpay, setSyncingRazorpay] = useState(false);
   const blank = {
     distributorId: "",
     transactionType: "id_purchase",
@@ -2188,6 +2261,27 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
       setError((e as Error).message);
     }
   }
+  async function syncRazorpayPayment(event: FormEvent) {
+    event.preventDefault();
+    setError("");
+    setSyncingRazorpay(true);
+    try {
+      await api("/api/admin/transactions/razorpay-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          distributorId: Number(razorpayDistributorId),
+          paymentId: razorpayPaymentId.trim(),
+        }),
+      });
+      setRazorpayPaymentId("");
+      await Promise.all([load(), loadDistributors()]);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSyncingRazorpay(false);
+    }
+  }
   async function remove(id: number) {
     if (!confirm("Delete this transaction record?")) return;
     try {
@@ -2236,6 +2330,44 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
           </div>
         ))}
       </div>
+      <form
+        onSubmit={syncRazorpayPayment}
+        className="mb-5 grid gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 md:grid-cols-[1fr_1.4fr_auto] md:items-end"
+      >
+        <label className="block text-sm font-semibold">
+          Distributor to link
+          <select
+            value={razorpayDistributorId}
+            onChange={(event) => setRazorpayDistributorId(event.target.value)}
+            className={fieldClass}
+            required
+          >
+            <option value="">Select distributor</option>
+            {distributors.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.distributor_code} - {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm font-semibold">
+          Captured Razorpay payment ID
+          <input
+            value={razorpayPaymentId}
+            onChange={(event) => setRazorpayPaymentId(event.target.value)}
+            className={fieldClass}
+            placeholder="pay_..."
+            required
+          />
+        </label>
+        <button type="submit" className={buttonPrimary} disabled={syncingRazorpay}>
+          {syncingRazorpay ? "Syncing..." : "Sync captured payment"}
+        </button>
+        <p className="text-xs leading-relaxed text-muted-foreground md:col-span-3">
+          Use this once for a captured Razorpay payment that was completed before registration
+          finished. The system verifies the payment, records the package ID and activates access.
+        </p>
+      </form>
       <div className="mb-5 grid gap-3 md:grid-cols-3">
         <label className="block text-sm font-semibold">
           Distributor

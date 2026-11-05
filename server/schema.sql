@@ -285,6 +285,27 @@ CREATE TABLE IF NOT EXISTS distributor_accounts (
   CONSTRAINT fk_distributor_account_distributor FOREIGN KEY (distributor_id) REFERENCES distributors(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS distributor_payment_intents (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  razorpay_order_id VARCHAR(40) NOT NULL UNIQUE,
+  razorpay_payment_id VARCHAR(40) NULL UNIQUE,
+  distributor_id BIGINT UNSIGNED NULL,
+  name VARCHAR(160) NOT NULL,
+  username VARCHAR(190) NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  phone VARCHAR(40) NOT NULL,
+  city VARCHAR(120) NOT NULL,
+  sponsor_code VARCHAR(80) NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  package_value DECIMAL(12,2) NOT NULL,
+  status ENUM('created', 'paid', 'failed') NOT NULL DEFAULT 'created',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_payment_intents_status (status),
+  INDEX idx_payment_intents_email (email),
+  CONSTRAINT fk_payment_intent_distributor FOREIGN KEY (distributor_id) REFERENCES distributors(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS distributor_memberships (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   distributor_id BIGINT UNSIGNED NOT NULL,
