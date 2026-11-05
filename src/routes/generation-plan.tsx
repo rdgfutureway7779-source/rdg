@@ -29,6 +29,7 @@ import rankSymbol13 from "@/assets/rank-symbols/level-13.png";
 import rankSymbol14 from "@/assets/rank-symbols/level-14.png";
 import rankSymbol15 from "@/assets/rank-symbols/level-15.png";
 import { bonuses, directReferralPlans, planLevels } from "@/data/site";
+import DistributorAuth from "@/routes/distributor-auth";
 
 const money = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -260,6 +261,24 @@ function GenerationPlan() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="py-4 sm:py-8">
+        <div className="container-x">
+          <div className="mx-auto mb-8 max-w-2xl text-center">
+            <p className="text-xs font-semibold tracking-[0.22em] text-primary uppercase">
+              Distributor access
+            </p>
+            <h2 className="mt-3 font-display text-3xl font-bold text-foreground md:text-4xl">
+              Register or login from here
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              Create your distributor account, enter your sponsor ID and choose a package, or use
+              the Login tab if you already have an account.
+            </p>
+          </div>
+          <DistributorAuth />
         </div>
       </section>
 
