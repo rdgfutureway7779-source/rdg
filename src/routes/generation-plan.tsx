@@ -314,7 +314,7 @@ function GenerationPlan() {
               Genealogy preview
             </p>
             <h2 className="mt-3 font-display text-3xl font-bold text-foreground md:text-4xl">
-              See how generations connect.
+              Genealogy Treeview
             </h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
               Every distributor joins under a sponsor ID. The admin panel and distributor dashboard
