@@ -1843,6 +1843,7 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
               type="email"
               value={form.email}
               onChange={(value) => setForm({ ...form, email: value })}
+              required
             />
             <TextField
               label="Phone"
@@ -1869,16 +1870,19 @@ function DistributorsView({ setError }: { setError: (value: string) => void }) {
               type="text"
               value={form.username}
               onChange={(value) => setForm({ ...form, username: value })}
+              required
             />
             <TextField
-              label={editing ? "New password (optional)" : "Login password"}
+              label={editing && editing.username ? "New password (optional)" : "Login password"}
               type="password"
               value={form.password}
               onChange={(value) => setForm({ ...form, password: value })}
+              required={!editing || !editing.username}
             />
             <p className="-mt-3 text-xs text-muted-foreground sm:col-span-2">
               Add login details so the distributor can access the dashboard. Leave password blank
-              while editing if it should remain unchanged.
+              while editing if an existing login should remain unchanged. It is required when this
+              distributor does not have a login yet.
             </p>
             {editing && (
               <div className="rounded-xl border border-border bg-surface p-4 sm:col-span-2">

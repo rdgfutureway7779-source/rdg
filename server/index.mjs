@@ -531,14 +531,14 @@ const enquirySchema = z.object({
   investmentRange: z.string().max(120).optional().nullable(),
   message: z.string().max(5000).optional().nullable(),
 });
-const distributorSchema = z.object({
+const adminDistributorSchema = z.object({
   distributorCode: z.string().trim().max(80).optional().nullable().or(z.literal("")),
   name: z.string().trim().min(2).max(160),
-  email: z.string().email().max(190).optional().nullable().or(z.literal("")),
+  email: z.string().trim().email().max(190),
   phone: optionalMobileSchema,
   city: z.string().max(120).optional().nullable(),
   sponsorCode: z.string().max(80).optional().nullable(),
-  username: z.string().trim().min(4).max(190).optional().nullable().or(z.literal("")),
+  username: z.string().trim().min(4).max(190),
   password: z.string().min(8).max(120).optional().nullable().or(z.literal("")),
   status: z.enum(["active", "inactive", "blocked"]).default("active"),
   notes: z.string().max(5000).optional().nullable(),
@@ -2257,7 +2257,7 @@ app.post(
   requireAuth,
   allowRoles("super_admin", "enquiry_manager"),
   asyncRoute(async (req, res) => {
-    const input = validate(distributorSchema, req.body, res);
+    const input = validate(adminDistributorSchema, req.body, res);
     if (!input) return;
     if (input.username && !input.password)
       return fail(res, "Enter a password when creating a distributor login.", 422);
@@ -2302,7 +2302,7 @@ app.put(
   allowRoles("super_admin", "enquiry_manager"),
   asyncRoute(async (req, res) => {
     const id = idSchema.parse(req.params.id);
-    const input = validate(distributorSchema, req.body, res);
+    const input = validate(adminDistributorSchema, req.body, res);
     if (!input) return;
     const [[current]] = await query(
       "SELECT distributor_code AS distributorCode FROM distributors WHERE id = ? LIMIT 1",
