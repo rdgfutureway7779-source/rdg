@@ -230,6 +230,17 @@ function GenerationPlan() {
             </a>
           </div>
           <div className="overflow-x-auto rounded-3xl border border-border bg-card p-5 shadow-card sm:p-8">
+            <div className="mb-6 border-b border-border pb-5">
+              <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
+                Genealogy tree
+              </p>
+              <h3 className="mt-2 font-display text-2xl font-bold text-foreground">
+                Sponsor-to-member tree preview
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                See how your sponsor ID connects direct joins and downline generations.
+              </p>
+            </div>
             <div className="mx-auto min-w-[620px]">
               <div className="mx-auto flex w-48 flex-col items-center rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center">
                 <span className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/20 bg-white p-1">
