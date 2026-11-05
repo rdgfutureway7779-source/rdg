@@ -3762,6 +3762,32 @@ app.post(
 );
 
 app.get(
+  "/api/public/distributor-network",
+  asyncRoute(async (_req, res) => {
+    const [rows] = await query(
+      `SELECT id, name, distributor_code AS distributorCode, sponsor_code AS sponsorCode
+       FROM distributors
+       WHERE status <> 'blocked'
+         AND (
+           EXISTS (
+             SELECT 1 FROM distributor_memberships m
+             WHERE m.distributor_id = distributors.id
+               AND m.payment_status = 'paid'
+           )
+           OR EXISTS (
+             SELECT 1 FROM distributor_transactions t
+             WHERE t.distributor_id = distributors.id
+               AND t.transaction_type = 'id_purchase'
+               AND t.payment_status = 'paid'
+           )
+         )
+       ORDER BY created_at ASC, id ASC`,
+    );
+    return ok(res, rows);
+  }),
+);
+
+app.get(
   "/api/public/gallery",
   asyncRoute(async (_req, res) => {
     const [rows] = await query(

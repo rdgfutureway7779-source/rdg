@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
 import generationPlanBreadcrumbImage from "@/assets/generation-plan-breadcrumb.png";
 import rankPlanImage from "@/assets/ai-rank-plan.png";
 import rankSymbol01 from "@/assets/rank-symbols/level-01.png";
@@ -109,6 +110,69 @@ function RankSymbol({ level }: { level: number }) {
   );
 }
 
+type PublicDistributor = {
+  id: number;
+  name: string;
+  distributorCode: string;
+  sponsorCode?: string | null;
+};
+
+function PublicGenealogyNode({
+  item,
+  childrenBySponsor,
+  depth,
+  visited,
+}: {
+  item: PublicDistributor;
+  childrenBySponsor: Map<string, PublicDistributor[]>;
+  depth: number;
+  visited: Set<number>;
+}) {
+  if (visited.has(Number(item.id)) || depth > 15) return null;
+  const nextVisited = new Set(visited).add(Number(item.id));
+  const children = childrenBySponsor.get(item.distributorCode.toUpperCase()) || [];
+  return (
+    <div className="flex shrink-0 flex-col items-center">
+      <a
+        href="#distributor-access"
+        className={`flex min-h-28 ${depth === 0 ? "w-48 border-primary/30 bg-primary/5" : "w-44 border-border bg-surface"} flex-col items-center justify-center rounded-2xl border p-3 text-center transition-shadow hover:shadow-soft`}
+        aria-label={`Create or access an account for ${item.name}`}
+      >
+        <span className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/15 bg-white p-1">
+          <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
+        </span>
+        <p className="mt-2 w-full truncate text-sm font-bold text-foreground" title={item.name}>
+          {item.name}
+        </p>
+        <p
+          className="mt-1 w-full truncate text-xs text-primary"
+          title={`Sponsor ID: ${item.distributorCode}`}
+        >
+          Sponsor ID: {item.distributorCode}
+        </p>
+      </a>
+      {children.length ? (
+        <div className="relative mt-8 flex min-w-max justify-center gap-3 pt-6 before:absolute before:top-0 before:left-[4.5rem] before:right-[4.5rem] before:border-t before:border-primary/25">
+          <span className="absolute -top-8 left-1/2 h-8 border-l border-primary/25" />
+          {children.map((child) => (
+            <div
+              key={`${child.id}-${depth + 1}`}
+              className="relative w-44 shrink-0 before:absolute before:-top-6 before:left-1/2 before:h-6 before:border-l before:border-primary/25"
+            >
+              <PublicGenealogyNode
+                item={child}
+                childrenBySponsor={childrenBySponsor}
+                depth={depth + 1}
+                visited={nextVisited}
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 const heroStats = [
   { value: "15", label: "recognition levels", icon: Crown },
   { value: "1 leg", label: "simple network view", icon: Network },
@@ -116,6 +180,40 @@ const heroStats = [
 ];
 
 function GenerationPlan() {
+  const [distributors, setDistributors] = useState<PublicDistributor[]>([]);
+  const [networkLoading, setNetworkLoading] = useState(true);
+  const [networkError, setNetworkError] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/public/distributor-network", { cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok || payload.success === false) throw new Error("Unable to load network");
+        return payload.data as PublicDistributor[];
+      })
+      .then(setDistributors)
+      .catch(() => setNetworkError(true))
+      .finally(() => setNetworkLoading(false));
+  }, []);
+
+  const { roots, childrenBySponsor } = useMemo(() => {
+    const bySponsor = new Map<string, PublicDistributor[]>();
+    const knownCodes = new Set(distributors.map((item) => item.distributorCode.toUpperCase()));
+    distributors.forEach((item) => {
+      const sponsor = String(item.sponsorCode || "").toUpperCase();
+      const children = bySponsor.get(sponsor) || [];
+      children.push(item);
+      bySponsor.set(sponsor, children);
+    });
+    return {
+      childrenBySponsor: bySponsor,
+      roots: distributors.filter((item) => {
+        const sponsor = String(item.sponsorCode || "").toUpperCase();
+        return !sponsor || !knownCodes.has(sponsor);
+      }),
+    };
+  }, [distributors]);
+
   return (
     <>
       <section className="relative w-full overflow-hidden bg-white sm:h-[clamp(390px,29vw,560px)]">
@@ -242,57 +340,36 @@ function GenerationPlan() {
                 card to create or access an account.
               </p>
             </div>
-            <div className="mx-auto min-w-[620px]">
-              <a
-                href="#distributor-access"
-                className="mx-auto flex w-48 flex-col items-center rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center transition-shadow hover:shadow-soft"
-                aria-label="Create or access a distributor account"
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/20 bg-white p-1">
-                  <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
-                </span>
-                <p className="mt-2 text-sm font-bold text-foreground">Your name</p>
-                <p className="mt-1 text-xs text-primary">Sponsor ID: RDG-ROOT-001</p>
-              </a>
-              <div className="mx-auto h-8 w-px bg-primary/25" />
-              <div className="relative grid grid-cols-3 gap-4 before:absolute before:top-0 before:left-[16.66%] before:right-[16.66%] before:border-t before:border-primary/25">
-                {["Member name A", "Member name B", "Member name C"].map((label, index) => (
-                  <div
-                    key={label}
-                    className="relative pt-5 text-center before:absolute before:top-0 before:left-1/2 before:h-5 before:border-l before:border-primary/25"
-                  >
-                    <a
-                      href="#distributor-access"
-                      className="block rounded-2xl border border-border bg-surface p-3 transition-shadow hover:shadow-soft"
-                      aria-label={`Create or access an account under ${label}`}
-                    >
-                      <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border border-primary/15 bg-white p-1">
-                        <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
-                      </span>
-                      <p className="mt-2 text-xs font-bold text-foreground">{label}</p>
-                      <p className="mt-1 text-[11px] text-primary">
-                        Sponsor ID: RDG-{String(index + 1).padStart(3, "0")}
-                      </p>
-                    </a>
-                    <div className="mx-auto h-6 w-px bg-primary/20" />
-                    <a
-                      href="#distributor-access"
-                      className="block rounded-xl border border-dashed border-border bg-card p-2 transition-shadow hover:shadow-soft"
-                      aria-label="Create or access a downline distributor account"
-                    >
-                      <span className="mx-auto flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white p-1">
-                        <img src={logoSmall} alt="RDG" className="h-full w-full object-contain" />
-                      </span>
-                      <p className="mt-2 text-[11px] font-semibold text-foreground">
-                        Downline name
-                      </p>
-                      <p className="mt-1 text-[10px] text-primary">Sponsor ID: RDG-00X</p>
-                    </a>
-                  </div>
-                ))}
+            {networkLoading ? (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                Loading live distributor tree…
               </div>
+            ) : networkError ? (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                Live distributor tree is temporarily unavailable.
+              </div>
+            ) : roots.length ? (
+              <div className="mx-auto min-w-[620px] overflow-x-auto rounded-2xl bg-card/60 p-4">
+                <div className="flex min-w-max justify-center gap-3">
+                  {roots.map((item) => (
+                    <PublicGenealogyNode
+                      key={item.id}
+                      item={item}
+                      childrenBySponsor={childrenBySponsor}
+                      depth={0}
+                      visited={new Set<number>()}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                No distributor has completed a package purchase yet.
+              </div>
+            )}
+            <div>
               <p className="mt-5 text-center text-xs text-muted-foreground">
-                Each tree card shows only the member name and sponsor ID. Contact and payment
+                Live tree cards show only distributor name and sponsor ID. Contact and payment
                 details stay private in the admin records.
               </p>
             </div>
