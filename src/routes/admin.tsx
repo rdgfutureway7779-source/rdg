@@ -88,7 +88,7 @@ function formatValidationDetails(details: unknown) {
 }
 
 async function api(path: string, options: RequestInit = {}) {
-  const response = await fetch(path, { credentials: "include", ...options });
+  const response = await fetch(path, { credentials: "include", cache: "no-store", ...options });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.success === false) {
     const details = formatValidationDetails(payload.details);
@@ -2212,7 +2212,7 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
     if (distributorFilter !== "all") params.set("distributorId", distributorFilter);
     if (typeFilter !== "all") params.set("transactionType", typeFilter);
     if (statusFilter !== "all") params.set("paymentStatus", statusFilter);
-    api(`/api/admin/transactions${params.toString() ? `?${params.toString()}` : ""}`)
+    return api(`/api/admin/transactions${params.toString() ? `?${params.toString()}` : ""}`)
       .then(setItems)
       .catch((e) => setError(e.message));
   };
@@ -2296,12 +2296,16 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
       setError((e as Error).message);
     }
   }
-  const totalIds = items.reduce((sum, item) => sum + Number(item.id_count || 0), 0);
+  const totalIds = items.reduce((sum, item) => sum + Number(item.id_count ?? item.idCount ?? 0), 0);
   const paid = items
-    .filter((item) => item.payment_status === "paid")
+    .filter(
+      (item) => String(item.payment_status || item.paymentStatus || "").toLowerCase() === "paid",
+    )
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const pending = items
-    .filter((item) => item.payment_status === "pending")
+    .filter(
+      (item) => String(item.payment_status || item.paymentStatus || "").toLowerCase() === "pending",
+    )
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
   return (
     <ModuleShell
