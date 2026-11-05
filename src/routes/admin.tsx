@@ -2135,6 +2135,12 @@ function AdminNetworkTree({
               </div>
             ))}
           </div>
+        ) : depth === 0 ? (
+          <div className="relative mt-8 flex justify-center pt-6 before:absolute before:top-0 before:left-1/2 before:h-6 before:border-l before:border-primary/25">
+            <div className="relative w-44 rounded-2xl border border-dashed border-primary/25 bg-card/70 px-3 py-4 text-center text-xs text-muted-foreground">
+              No direct distributors yet
+            </div>
+          </div>
         ) : null}
       </div>
     );
@@ -2269,7 +2275,7 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          distributorId: Number(razorpayDistributorId),
+          distributorId: razorpayDistributorId ? Number(razorpayDistributorId) : undefined,
           paymentId: razorpayPaymentId.trim(),
         }),
       });
@@ -2334,14 +2340,13 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
         className="mb-5 grid gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 md:grid-cols-[1fr_1.4fr_auto] md:items-end"
       >
         <label className="block text-sm font-semibold">
-          Distributor to link
+          Distributor to link (optional)
           <select
             value={razorpayDistributorId}
             onChange={(event) => setRazorpayDistributorId(event.target.value)}
             className={fieldClass}
-            required
           >
-            <option value="">Select distributor</option>
+            <option value="">Auto-detect registration</option>
             {distributors.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.distributor_code} - {item.name}
@@ -2363,8 +2368,9 @@ function TransactionsView({ setError }: { setError: (value: string) => void }) {
           {syncingRazorpay ? "Syncing..." : "Sync captured payment"}
         </button>
         <p className="text-xs leading-relaxed text-muted-foreground md:col-span-3">
-          Use this once for a captured Razorpay payment that was completed before registration
-          finished. The system verifies the payment, records the package ID and activates access.
+          Enter a captured payment ID. For a website registration, the system auto-detects the
+          pending registration, creates the distributor account and activates access. Select an
+          existing distributor only when the payment was made for an already-created account.
         </p>
       </form>
       <div className="mb-5 grid gap-3 md:grid-cols-3">
