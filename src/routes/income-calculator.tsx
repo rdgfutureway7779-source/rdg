@@ -392,7 +392,7 @@ function Calculator() {
           </div>
           <div className="mx-auto mt-10 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {bonuses
-              .filter((bonus) => bonus.name !== "Performance Bonus")
+              .filter((bonus) => bonus.name !== "Performance Bonus/Award reward bonus")
               .map((bonus, index) => (
                 <motion.article
                   key={bonus.name}

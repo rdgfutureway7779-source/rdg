@@ -517,7 +517,7 @@ export const journey = [
 export const bonuses = [
   { name: "Retail Profit", detail: "15–30% margin on every product you sell.", value: "Up to 30%" },
   {
-    name: "Performance Bonus",
+    name: "Performance Bonus/Award reward bonus",
     detail: "Paid on personal and group performance each month.",
     value: "5% – 25%",
   },
